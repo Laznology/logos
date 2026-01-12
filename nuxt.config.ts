@@ -33,9 +33,9 @@ export default defineNuxtConfig({
   vite: {
     optimizeDeps: {
       include: [
-        'prosemirror-state',
-        'prosemirror-tables',
-        'prosemirror-view',
+        '@nuxt/ui > prosemirror-state',
+        '@nuxt/ui > prosemirror-tables',
+        '@nuxt/ui > prosemirror-view',
         'yjs',
         'y-partykit/provider'
       ]
