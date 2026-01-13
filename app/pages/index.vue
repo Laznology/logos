@@ -4,7 +4,7 @@ import type { Editor } from '@tiptap/core'
 import { Emoji } from '@tiptap/extension-emoji'
 import { TaskList, TaskItem } from '@tiptap/extension-list'
 import { TableKit } from '@tiptap/extension-table'
-import { CellSelection } from 'prosemirror-tables'
+import { CellSelection } from '@tiptap/pm/tables'
 import { CodeBlockShiki } from 'tiptap-extension-code-block-shiki'
 import { ImageUpload } from '~/components/editor/ImageUploadExtension'
 

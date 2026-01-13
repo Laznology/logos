@@ -34,8 +34,6 @@ export default defineNuxtConfig({
     optimizeDeps: {
       include: [
         '@nuxt/ui > prosemirror-state',
-        '@nuxt/ui > prosemirror-tables',
-        '@nuxt/ui > prosemirror-view',
         'yjs',
         'y-partykit/provider'
       ]
