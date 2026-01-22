@@ -67,7 +67,7 @@ const { getItems: getDragHandleItems, onNodeChange } = useEditorDragHandle(custo
 const { toolbarItems, bubbleToolbarItems, getImageToolbarItems, getTableToolbarItems } = useEditorToolbar(customHandlers, { aiLoading })
 
 // Default content - only used when Y.js document is empty
-const content = ref(`# Nuxt UI Editor Template
+const content = ref(`# Nuxt Editor Template
 
 A Notion-like WYSIWYG editor with AI-powered completions and real-time collaboration in [Vue](https://vuejs.org/) & [Nuxt](https://nuxt.com/).
 
