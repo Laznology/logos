@@ -265,6 +265,21 @@ const extensions = computed(() => [
       }"
     />
 
+    <UEditorEmojiMenu
+      :editor="editor"
+      :items="emojiItems"
+    />
+
+    <UEditorMentionMenu
+      :editor="editor"
+      :items="mentionItems"
+    />
+
+    <UEditorSuggestionMenu
+      :editor="editor"
+      :items="suggestionItems"
+    />
+
     <UEditorDragHandle
       v-slot="{ ui, onClick }"
       :editor="editor"
@@ -303,18 +318,5 @@ const extensions = computed(() => [
         />
       </UDropdownMenu>
     </UEditorDragHandle>
-
-    <UEditorEmojiMenu
-      :editor="editor"
-      :items="emojiItems"
-    />
-    <UEditorMentionMenu
-      :editor="editor"
-      :items="mentionItems"
-    />
-    <UEditorSuggestionMenu
-      :editor="editor"
-      :items="suggestionItems"
-    />
   </UEditor>
 </template>
