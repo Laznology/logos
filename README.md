@@ -32,7 +32,7 @@ Notion-like WYSIWYG editor with AI-powered completions and real-time collaborati
 ## Quick Start
 
 ```bash [Terminal]
-npm create nuxt@latest -- -t github:nuxt-ui-templates/editor
+npm create nuxt@latest -- -t ui/editor
 ```
 
 ## Deploy your own
