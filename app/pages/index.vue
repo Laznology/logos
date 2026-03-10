@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { EditorCustomHandlers } from '@nuxt/ui'
 import type { Editor } from '@tiptap/core'
-import { Emoji } from '@tiptap/extension-emoji'
 import { TaskList, TaskItem } from '@tiptap/extension-list'
 import { TableKit } from '@tiptap/extension-table'
 import { CellSelection } from '@tiptap/pm/tables'
@@ -60,14 +59,14 @@ const customHandlers = {
   ...aiHandlers
 } satisfies EditorCustomHandlers
 
-const { items: emojiItems } = useEditorEmojis()
+const { items: emojiItems, extension: Emoji } = useEditorEmojis()
 const { items: mentionItems } = useEditorMentions(connectedUsers)
 const { items: suggestionItems } = useEditorSuggestions(customHandlers)
 const { getItems: getDragHandleItems, onNodeChange } = useEditorDragHandle(customHandlers)
 const { toolbarItems, bubbleToolbarItems, getImageToolbarItems, getTableToolbarItems } = useEditorToolbar(customHandlers, { aiLoading })
 
 // Default content - only used when Y.js document is empty
-const content = ref(`# Nuxt Editor Template
+const content = ref(`# Nuxt Editor Template :sparkles:
 
 A Notion-like WYSIWYG editor with AI-powered completions and real-time collaboration in [Vue](https://vuejs.org/) & [Nuxt](https://nuxt.com/).
 
