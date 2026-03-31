@@ -2,10 +2,10 @@
 
 [![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
 
-Notion-like WYSIWYG editor with AI-powered completions and real-time collaboration in Vue & Nuxt. Built with [Nuxt UI](https://ui.nuxt.com) and [TipTap](https://tiptap.dev), showcasing the powerful `UEditor` component with advanced editing capabilities.
+Notion-like WYSIWYG editor with AI-powered completions and real-time collaboration in Vue & Nuxt. Built with [Nuxt UI](https://ui.nuxt.com) and [TipTap](https://tiptap.dev), showcasing the powerful [`Editor`](https://ui.nuxt.com/docs/components/editor) component with advanced editing capabilities.
 
 - [Live demo](https://editor-template.nuxt.dev/)
-- [Documentation](https://ui.nuxt.com/docs/components/editor)
+- [Documentation](https://ui.nuxt.com/docs/getting-started/installation/nuxt)
 
 <a href="https://editor-template.nuxt.dev/" target="_blank">
   <picture>
@@ -49,7 +49,7 @@ pnpm install
 
 ### AI Integration (Optional)
 
-This template includes AI-powered writing assistance using the [Vercel AI SDK](https://ai-sdk.dev/) and its [`useCompletion`](https://ai-sdk.dev/docs/reference/ai-sdk-ui/use-completion) composable for streaming text generation with support for multiple providers through [Vercel AI Gateway](https://vercel.com/docs/ai-gateway).
+This template includes AI-powered writing assistance using the [Vercel AI SDK](https://ai-sdk.dev/) and its [`useCompletion`](https://ai-sdk.dev/docs/reference/ai-sdk-ui/use-completion) composable for streaming text generation with support for multiple providers through [Vercel AI Gateway](https://vercel.com/docs/ai-gateway). When deployed on Vercel, the AI Gateway is configured automatically.
 
 **AI Features:**
 
@@ -69,33 +69,25 @@ AI_GATEWAY_API_KEY=<your-vercel-ai-gateway-api-key>
 ```
 
 > [!TIP]
-> With Vercel AI Gateway, you don't need individual API keys for OpenAI, Anthropic, etc. The AI Gateway provides a unified API to access hundreds of models through a single endpoint with automatic load balancing, fallbacks, and spend monitoring.
+> With [Vercel AI Gateway](https://vercel.com/docs/ai-gateway), you don't need individual API keys for OpenAI, Anthropic, etc. It provides a unified API to access hundreds of models through a single endpoint with automatic load balancing, fallbacks, and spend monitoring.
 
 ### Blob Storage (Optional)
 
-This template uses [NuxtHub Blob](https://hub.nuxt.com/docs/blob) for image uploads, which supports multiple storage providers:
+This template uses [NuxtHub Blob](https://hub.nuxt.com/docs/blob) for image uploads, which supports multiple storage drivers:
 
-- **Local filesystem** (default for development)
-- **Vercel Blob** (auto-configured when deployed to Vercel)
-- **Cloudflare R2** (auto-configured when deployed to Cloudflare)
-- **Amazon S3** (with manual configuration)
+- **Local filesystem** (default for development, stored in `.data/blob`)
+- **[Vercel Blob](https://vercel.com/docs/vercel-blob)** (auto-configured when deployed to Vercel)
+- **[Cloudflare R2](https://hub.nuxt.com/docs/blob#set-a-driver)** (when deployed to Cloudflare)
+- **[Amazon S3](https://hub.nuxt.com/docs/blob#set-a-driver)** (with manual configuration)
 
-For **[Vercel Blob](https://vercel.com/docs/vercel-blob)** (used by default via `@vercel/blob`), assign a Blob Store to your project from the Vercel dashboard (Project → Storage), then set the token for local development:
+For **Vercel Blob**, assign a Blob Store to your project from the Vercel dashboard (Project → Storage), then set the token for local development:
 
 ```bash
 BLOB_READ_WRITE_TOKEN=<your-vercel-blob-token>
 ```
 
-For **S3-compatible storage**, set:
-
-```bash
-S3_ACCESS_KEY_ID=<your-access-key-id>
-S3_SECRET_ACCESS_KEY=<your-secret-access-key>
-S3_BUCKET=<your-bucket-name>
-S3_REGION=<your-region>
-```
-
-> Without configuration, files are stored locally in `.data/blob` during development.
+> [!NOTE]
+> See the [NuxtHub Blob documentation](https://hub.nuxt.com/docs/blob#set-a-driver) for configuring other storage drivers.
 
 ### Collaboration (Optional)
 
@@ -143,3 +135,7 @@ pnpm preview
 ```
 
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+
+## Renovate integration
+
+Install [Renovate GitHub app](https://github.com/apps/renovate/installations/select_target) on your repository and you are good to go.
