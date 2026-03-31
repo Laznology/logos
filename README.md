@@ -61,10 +61,9 @@ This template includes AI-powered writing assistance using the [Vercel AI SDK](h
 - **Summarize** - Generate a summary of selected content
 - **Translate** - Translate selected text to English, French, Spanish, or German
 
-Set your AI provider configuration in `.env`:
+For local development, set your API key in `.env`:
 
 ```bash
-# AI Configuration via Vercel AI Gateway (unified API for all providers)
 AI_GATEWAY_API_KEY=<your-vercel-ai-gateway-api-key>
 ```
 
