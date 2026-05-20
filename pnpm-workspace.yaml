@@ -1,5 +1,8 @@
-ignoredBuiltDependencies:
-  - '@parcel/watcher'
-  - esbuild
-  - unrs-resolver
-  - vue-demi
+allowBuilds:
+  '@parcel/watcher': false
+  esbuild: false
+  unrs-resolver: false
+  vue-demi: false
+
+overrides:
+  swrv: 1.1.0
