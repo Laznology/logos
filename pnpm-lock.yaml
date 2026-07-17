@@ -12,9 +12,6 @@ importers:
 
   .:
     dependencies:
-      '@ai-sdk/gateway':
-        specifier: ^4.0.7
-        version: 4.0.7(zod@4.4.3)
       '@ai-sdk/vue':
         specifier: ^4.0.9
         version: 4.0.9(vue@3.5.35(typescript@6.0.3))(zod@4.4.3)
