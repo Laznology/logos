@@ -1,36 +1,36 @@
 <script setup lang="ts">
-import type { NodeViewProps } from '@tiptap/vue-3'
-import { NodeViewWrapper } from '@tiptap/vue-3'
+import type { NodeViewProps } from "@tiptap/vue-3";
+import { NodeViewWrapper } from "@tiptap/vue-3";
 
-const props = defineProps<NodeViewProps>()
+const props = defineProps<NodeViewProps>();
 
-const fileUploadRef = useTemplateRef('fileUploadRef')
+const fileUploadRef = useTemplateRef("fileUploadRef");
 
-const error = ref<string | null>(null)
-const loading = ref(false)
+const error = ref<string | null>(null);
+const loading = ref(false);
 
-const { csrf, headerName } = useCsrf()
-const upload = useUpload('/api/upload', {
-  formKey: 'file',
+const { csrf, headerName } = useCsrf();
+const upload = useUpload("/api/upload", {
+  formKey: "file",
+  headers: { [headerName]: csrf },
   multiple: false,
-  headers: { [headerName]: csrf }
-})
+});
 
 async function onFileChange() {
-  const target = fileUploadRef.value?.inputRef
+  const target = fileUploadRef.value?.inputRef;
   if (!target) {
-    return
+    return;
   }
 
-  loading.value = true
-  error.value = null
+  loading.value = true;
+  error.value = null;
 
   try {
-    const result = await upload(target)
+    const result = await upload(target);
 
-    const pos = props.getPos()
-    if (typeof pos !== 'number') {
-      return
+    const pos = props.getPos();
+    if (typeof pos !== "number") {
+      return;
     }
 
     props.editor
@@ -38,11 +38,14 @@ async function onFileChange() {
       .focus()
       .deleteRange({ from: pos, to: pos + 1 })
       .setImage({ src: result.url || `/images/${result.pathname}` })
-      .run()
-  } catch (e) {
-    error.value = (e as Error & { data: { message: string } }).data.message || 'An unknown error occurred'
+      .run();
+  } catch (err) {
+    error.value =
+      (err as Error & { data?: { message?: string } })?.data?.message ||
+      (err as Error).message ||
+      "An unknown error occurred";
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 </script>
@@ -61,7 +64,13 @@ async function onFileChange() {
     >
       <template #leading>
         <UAvatar
-          :icon="error ? 'i-lucide-alert-circle' : loading ? 'i-lucide-loader-circle' : 'i-lucide-image'"
+          :icon="
+            error
+              ? 'i-lucide-alert-circle'
+              : loading
+                ? 'i-lucide-loader-circle'
+                : 'i-lucide-image'
+          "
           size="xl"
           :ui="{ icon: [loading && 'animate-spin', error && 'text-error'] }"
         />

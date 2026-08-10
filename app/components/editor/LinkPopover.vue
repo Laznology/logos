@@ -1,98 +1,107 @@
 <script setup lang="ts">
-import type { Editor } from '@tiptap/vue-3'
+import type { Editor } from "@tiptap/vue-3";
 
 const props = defineProps<{
-  editor: Editor
-  autoOpen?: boolean
-}>()
+  editor: Editor;
+  autoOpen?: boolean;
+}>();
 
-const open = ref(false)
-const url = ref('')
+const open = ref(false);
+const url = ref("");
 
-const active = computed(() => props.editor.isActive('link'))
+const active = computed(() => props.editor.isActive("link"));
 const disabled = computed(() => {
-  if (!props.editor.isEditable) return true
-  const { selection } = props.editor.state
-  return selection.empty && !props.editor.isActive('link')
-})
-
-watch(() => props.editor, (editor, _, onCleanup) => {
-  if (!editor) return
-
-  const updateUrl = () => {
-    const { href } = editor.getAttributes('link')
-    url.value = href || ''
+  if (!props.editor.isEditable) {
+    return true;
   }
+  const { selection } = props.editor.state;
+  return selection.empty && !props.editor.isActive("link");
+});
 
-  updateUrl()
-  editor.on('selectionUpdate', updateUrl)
+watch(
+  () => props.editor,
+  (editor, _, onCleanup) => {
+    if (!editor) {
+      return;
+    }
 
-  onCleanup(() => {
-    editor.off('selectionUpdate', updateUrl)
-  })
-}, { immediate: true })
+    const updateUrl = () => {
+      const { href } = editor.getAttributes("link");
+      url.value = href || "";
+    };
+
+    updateUrl();
+    editor.on("selectionUpdate", updateUrl);
+
+    onCleanup(() => {
+      editor.off("selectionUpdate", updateUrl);
+    });
+  },
+  { immediate: true }
+);
 
 watch(active, (isActive) => {
   if (isActive && props.autoOpen) {
-    open.value = true
+    open.value = true;
   }
-})
+});
 
 function setLink() {
-  if (!url.value) return
+  if (!url.value) {
+    return;
+  }
 
-  const { selection } = props.editor.state
-  const isEmpty = selection.empty
-  const hasCode = props.editor.isActive('code')
+  const { selection } = props.editor.state;
+  const isEmpty = selection.empty;
+  const hasCode = props.editor.isActive("code");
 
-  let chain = props.editor.chain().focus()
+  let chain = props.editor.chain().focus();
 
   // When linking code, extend the code mark range first to select the full code
   if (hasCode && !isEmpty) {
-    chain = chain.extendMarkRange('code').setLink({ href: url.value })
+    chain = chain.extendMarkRange("code").setLink({ href: url.value });
   } else {
-    chain = chain.extendMarkRange('link').setLink({ href: url.value })
+    chain = chain.extendMarkRange("link").setLink({ href: url.value });
 
     if (isEmpty) {
-      chain = chain.insertContent({ type: 'text', text: url.value })
+      chain = chain.insertContent({ text: url.value, type: "text" });
     }
   }
 
-  chain.run()
-  open.value = false
+  chain.run();
+  open.value = false;
 }
 
 function removeLink() {
   props.editor
     .chain()
     .focus()
-    .extendMarkRange('link')
+    .extendMarkRange("link")
     .unsetLink()
-    .setMeta('preventAutolink', true)
-    .run()
+    .setMeta("preventAutolink", true)
+    .run();
 
-  url.value = ''
-  open.value = false
+  url.value = "";
+  open.value = false;
 }
 
 function openLink() {
-  if (!url.value) return
-  window.open(url.value, '_blank', 'noopener,noreferrer')
+  if (!url.value) {
+    return;
+  }
+  window.open(url.value, "_blank", "noopener,noreferrer");
 }
 
 function handleKeyDown(event: KeyboardEvent) {
-  if (event.key === 'Enter') {
-    event.preventDefault()
-    setLink()
+  if (event.key === "Enter") {
+    event.preventDefault();
+    setLink();
   }
 }
 </script>
 
 <template>
-  <UPopover
-    v-model:open="open"
-    :ui="{ content: 'p-0.5' }"
-  >
+  <UPopover v-model:open="open" :ui="{ content: 'p-0.5' }">
     <UTooltip text="Link">
       <UButton
         icon="i-lucide-link"
@@ -116,7 +125,7 @@ function handleKeyDown(event: KeyboardEvent) {
         placeholder="Paste a link..."
         @keydown="handleKeyDown"
       >
-        <div class="flex items-center mr-0.5">
+        <div class="mr-0.5 flex items-center">
           <UButton
             icon="i-lucide-corner-down-left"
             variant="ghost"
@@ -126,10 +135,7 @@ function handleKeyDown(event: KeyboardEvent) {
             @click="setLink"
           />
 
-          <USeparator
-            orientation="vertical"
-            class="h-6 mx-1"
-          />
+          <USeparator orientation="vertical" class="mx-1 h-6" />
 
           <UButton
             icon="i-lucide-external-link"

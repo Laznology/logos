@@ -1,69 +1,87 @@
 <script setup lang="ts">
-import type { EditorCustomHandlers } from '@nuxt/ui'
-import type { Editor } from '@tiptap/core'
-import { TaskList, TaskItem } from '@tiptap/extension-list'
-import { TableKit } from '@tiptap/extension-table'
-import { CellSelection } from '@tiptap/pm/tables'
-import { CodeBlockShiki } from 'tiptap-extension-code-block-shiki'
-import { ImageUpload } from '~/components/editor/ImageUploadExtension'
+import type { EditorCustomHandlers } from "@nuxt/ui";
+import type { Editor } from "@tiptap/core";
+import { TaskList, TaskItem } from "@tiptap/extension-list";
+import { TableKit } from "@tiptap/extension-table";
+import { CellSelection } from "@tiptap/pm/tables";
+import { CodeBlockShiki } from "tiptap-extension-code-block-shiki";
 
-const route = useRoute()
-const runtimeConfig = useRuntimeConfig()
+import { ImageUpload } from "~/components/editor/ImageUploadExtension";
 
-const room = computed(() => route.query.room as string | undefined)
+const route = useRoute();
+const runtimeConfig = useRuntimeConfig();
 
-const user = useState('user', () => ({
+const room = computed(() => route.query.room as string | undefined);
+
+const user = useState("user", () => ({
+  color: getRandomColor(),
   name: getRandomName(),
-  color: getRandomColor()
-}))
+}));
 
-const appConfig = useAppConfig()
+const appConfig = useAppConfig();
 
-const editorRef = useTemplateRef('editorRef')
+const editorRef = useTemplateRef("editorRef");
 
-const { extension: Completion, handlers: aiHandlers, isLoading: aiLoading } = useEditorCompletion(editorRef)
+const {
+  extension: Completion,
+  handlers: aiHandlers,
+  isLoading: aiLoading,
+} = useEditorCompletion(editorRef);
 
 const {
   enabled: collaborationEnabled,
   ready: collaborationReady,
   extensions: collaborationExtensions,
-  connectedUsers
+  connectedUsers,
 } = useEditorCollaboration({
-  room: room.value,
   host: runtimeConfig.public.partykitHost,
+  room: room.value,
   user: {
+    color: COLORS[user.value.color]!,
     name: user.value.name,
-    color: COLORS[user.value.color]!
-  }
-})
+  },
+});
 
 // Set primary color for the app
 if (collaborationEnabled) {
-  appConfig.ui.colors.primary = user.value.color
+  appConfig.ui.colors.primary = user.value.color;
 }
 
 // Custom handlers for editor (merged with AI handlers)
 const customHandlers = {
   imageUpload: {
-    canExecute: (editor: Editor) => editor.can().insertContent({ type: 'imageUpload' }),
-    execute: (editor: Editor) => editor.chain().focus().insertContent({ type: 'imageUpload' }),
-    isActive: (editor: Editor) => editor.isActive('imageUpload'),
-    isDisabled: undefined
+    canExecute: (editor: Editor) =>
+      editor.can().insertContent({ type: "imageUpload" }),
+    execute: (editor: Editor) =>
+      editor.chain().focus().insertContent({ type: "imageUpload" }),
+    isActive: (editor: Editor) => editor.isActive("imageUpload"),
+    isDisabled: undefined,
   },
   table: {
-    canExecute: (editor: Editor) => editor.can().insertTable({ rows: 3, cols: 3, withHeaderRow: true }),
-    execute: (editor: Editor) => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }),
-    isActive: (editor: Editor) => editor.isActive('table'),
-    isDisabled: undefined
+    canExecute: (editor: Editor) =>
+      editor.can().insertTable({ cols: 3, rows: 3, withHeaderRow: true }),
+    execute: (editor: Editor) =>
+      editor
+        .chain()
+        .focus()
+        .insertTable({ cols: 3, rows: 3, withHeaderRow: true }),
+    isActive: (editor: Editor) => editor.isActive("table"),
+    isDisabled: undefined,
   },
-  ...aiHandlers
-} satisfies EditorCustomHandlers
+  ...aiHandlers,
+} satisfies EditorCustomHandlers;
 
-const { items: emojiItems, extension: Emoji } = useEditorEmojis()
-const { items: mentionItems } = useEditorMentions(connectedUsers)
-const { items: suggestionItems } = useEditorSuggestions(customHandlers)
-const { getItems: getDragHandleItems, onNodeChange } = useEditorDragHandle(customHandlers)
-const { toolbarItems, bubbleToolbarItems, getImageToolbarItems, getTableToolbarItems } = useEditorToolbar(customHandlers, { aiLoading })
+const { items: emojiItems, extension: Emoji } = useEditorEmojis();
+const { items: mentionItems } = useEditorMentions(connectedUsers);
+const { items: suggestionItems } = useEditorSuggestions(customHandlers);
+const { getItems: getDragHandleItems, onNodeChange } =
+  useEditorDragHandle(customHandlers);
+const {
+  toolbarItems,
+  bubbleToolbarItems,
+  getImageToolbarItems,
+  getTableToolbarItems,
+} = useEditorToolbar(customHandlers, { aiLoading });
 
 // Default content - only used when Y.js document is empty
 const content = ref(`# Nuxt Editor Template :sparkles:
@@ -155,40 +173,44 @@ Collaborative editing powered by [PartyKit](https://partykit.io/). Add \`?room=m
 ---
 
 Visit the [Nuxt UI documentation](https://ui.nuxt.com/docs/components/editor) to learn more about the Editor component.
-`)
+`);
 
 // Set initial content for collaborative documents (only if empty)
 function onCreate({ editor }: { editor: Editor }) {
-  if (!collaborationEnabled) return
+  if (!collaborationEnabled) {
+    return;
+  }
 
-  const storageKey = `editor-initialized-${room.value}`
+  const storageKey = `editor-initialized-${room.value}`;
 
   // Skip if already initialized this session (handles HMR)
-  if (sessionStorage.getItem(storageKey)) return
+  if (sessionStorage.getItem(storageKey)) {
+    return;
+  }
 
   // Wait for Y.js to sync existing content from server before checking if empty
   setTimeout(() => {
-    const text = editor.state.doc.textContent.trim()
+    const text = editor.state.doc.textContent.trim();
     if (!text) {
-      editor.commands.setContent(content.value, { contentType: 'markdown' })
+      editor.commands.setContent(content.value, { contentType: "markdown" });
     }
-    sessionStorage.setItem(storageKey, 'true')
-  }, 500)
+    sessionStorage.setItem(storageKey, "true");
+  }, 500);
 }
 
 function onUpdate(value: string) {
   if (!collaborationEnabled) {
-    content.value = value
+    content.value = value;
   }
 }
 
 const extensions = computed(() => [
   CodeBlockShiki.configure({
-    defaultTheme: 'material-theme',
+    defaultTheme: "material-theme",
     themes: {
-      light: 'material-theme-lighter',
-      dark: 'material-theme-palenight'
-    }
+      dark: "material-theme-palenight",
+      light: "material-theme-lighter",
+    },
   }),
   Completion,
   Emoji,
@@ -196,8 +218,8 @@ const extensions = computed(() => [
   TableKit,
   TaskList,
   TaskItem,
-  ...collaborationExtensions.value
-])
+  ...collaborationExtensions.value,
+]);
 </script>
 
 <template>
@@ -215,7 +237,7 @@ const extensions = computed(() => [
     class="min-h-screen"
     :ui="{
       base: 'p-4 sm:p-14',
-      content: 'max-w-4xl mx-auto'
+      content: 'max-w-4xl mx-auto',
     }"
     @update:model-value="onUpdate"
     @create="onCreate"
@@ -223,23 +245,26 @@ const extensions = computed(() => [
     <AppHeader>
       <EditorCollaborationUsers :users="connectedUsers" />
 
-      <UEditorToolbar
-        :editor="editor"
-        :items="toolbarItems"
-      />
+      <UEditorToolbar :editor="editor" :items="toolbarItems" />
     </AppHeader>
 
     <UEditorToolbar
       :editor="editor"
       :items="bubbleToolbarItems"
       layout="bubble"
-      :should-show="({ editor, view, state }: any) => {
-        if (editor.isActive('imageUpload') || editor.isActive('image') || state.selection instanceof CellSelection) {
-          return false
+      :should-show="
+        ({ editor, view, state }: any) => {
+          if (
+            editor.isActive('imageUpload') ||
+            editor.isActive('image') ||
+            state.selection instanceof CellSelection
+          ) {
+            return false;
+          }
+          const { selection } = state;
+          return view.hasFocus() && !selection.empty;
         }
-        const { selection } = state
-        return view.hasFocus() && !selection.empty
-      }"
+      "
     >
       <template #link>
         <EditorLinkPopover :editor="editor" />
@@ -250,34 +275,31 @@ const extensions = computed(() => [
       :editor="editor"
       :items="getImageToolbarItems(editor)"
       layout="bubble"
-      :should-show="({ editor, view }: any) => {
-        return editor.isActive('image') && view.hasFocus()
-      }"
+      :should-show="
+        ({ editor, view }: any) => {
+          return editor.isActive('image') && view.hasFocus();
+        }
+      "
     />
 
     <UEditorToolbar
       :editor="editor"
       :items="getTableToolbarItems(editor)"
       layout="bubble"
-      :should-show="({ editor, view }: any) => {
-        return editor.state.selection instanceof CellSelection && view.hasFocus()
-      }"
+      :should-show="
+        ({ editor, view }: any) => {
+          return (
+            editor.state.selection instanceof CellSelection && view.hasFocus()
+          );
+        }
+      "
     />
 
-    <UEditorEmojiMenu
-      :editor="editor"
-      :items="emojiItems"
-    />
+    <UEditorEmojiMenu :editor="editor" :items="emojiItems" />
 
-    <UEditorMentionMenu
-      :editor="editor"
-      :items="mentionItems"
-    />
+    <UEditorMentionMenu :editor="editor" :items="mentionItems" />
 
-    <UEditorSuggestionMenu
-      :editor="editor"
-      :items="suggestionItems"
-    />
+    <UEditorSuggestionMenu :editor="editor" :items="suggestionItems" />
 
     <UEditorDragHandle
       v-slot="{ ui, onClick }"
@@ -290,12 +312,14 @@ const extensions = computed(() => [
         variant="ghost"
         size="sm"
         :class="ui.handle()"
-        @click="(e: MouseEvent) => {
-          e.stopPropagation()
-          const node = onClick()
+        @click="
+          (e: MouseEvent) => {
+            e.stopPropagation();
+            const node = onClick();
 
-          handlers.suggestion?.execute(editor, { pos: node?.pos }).run()
-        }"
+            handlers.suggestion?.execute(editor, { pos: node?.pos }).run();
+          }
+        "
       />
 
       <UDropdownMenu

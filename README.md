@@ -37,7 +37,7 @@ npm create nuxt@latest -- -t ui/editor
 
 ## Deploy your own
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-name=editor&repository-url=https%3A%2F%2Fgithub.com%2Fnuxt-ui-templates%2Feditor&demo-image=https%3A%2F%2Fui.nuxt.com%2Fassets%2Ftemplates%2Fnuxt%2Feditor-dark.png&demo-url=https%3A%2F%2Feditor-template.nuxt.dev%2F&demo-title=Nuxt%20Editor%20Template&demo-description=Notion-like%20WYSIWYG%20editor%20with%20AI-powered%20completions%20and%20real-time%20collaboration%20in%20Vue%20%26%20Nuxt.&env=NUXT_PUBLIC_PARTYKIT_HOST&envDescription=PartyKit%20host%20URL%20for%20real-time%20collaboration%20(optional)&envLink=https%3A%2F%2Fdocs.partykit.io%2Fquickstart%2F)
+[![Deploy with Vercel](https://vercel.com/button)](<https://vercel.com/new/clone?repository-name=editor&repository-url=https%3A%2F%2Fgithub.com%2Fnuxt-ui-templates%2Feditor&demo-image=https%3A%2F%2Fui.nuxt.com%2Fassets%2Ftemplates%2Fnuxt%2Feditor-dark.png&demo-url=https%3A%2F%2Feditor-template.nuxt.dev%2F&demo-title=Nuxt%20Editor%20Template&demo-description=Notion-like%20WYSIWYG%20editor%20with%20AI-powered%20completions%20and%20real-time%20collaboration%20in%20Vue%20%26%20Nuxt.&env=NUXT_PUBLIC_PARTYKIT_HOST&envDescription=PartyKit%20host%20URL%20for%20real-time%20collaboration%20(optional)&envLink=https%3A%2F%2Fdocs.partykit.io%2Fquickstart%2F>)
 
 ## Setup
 
@@ -67,8 +67,7 @@ For local development, set your API key in `.env`:
 AI_GATEWAY_API_KEY=<your-vercel-ai-gateway-api-key>
 ```
 
-> [!TIP]
-> With [Vercel AI Gateway](https://vercel.com/docs/ai-gateway), you don't need individual API keys for OpenAI, Anthropic, etc. It provides a unified API to access hundreds of models through a single endpoint with automatic load balancing, fallbacks, and spend monitoring.
+> [!TIP] With [Vercel AI Gateway](https://vercel.com/docs/ai-gateway), you don't need individual API keys for OpenAI, Anthropic, etc. It provides a unified API to access hundreds of models through a single endpoint with automatic load balancing, fallbacks, and spend monitoring.
 
 ### Blob Storage (Optional)
 
@@ -85,8 +84,7 @@ For **Vercel Blob**, assign a Blob Store to your project from the Vercel dashboa
 BLOB_READ_WRITE_TOKEN=<your-vercel-blob-token>
 ```
 
-> [!NOTE]
-> See the [NuxtHub Blob documentation](https://hub.nuxt.com/docs/blob#set-a-driver) for configuring other storage drivers.
+> [!NOTE] See the [NuxtHub Blob documentation](https://hub.nuxt.com/docs/blob#set-a-driver) for configuring other storage drivers.
 
 ### Collaboration (Optional)
 

@@ -1,52 +1,40 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  modules: [
-    '@nuxt/eslint',
-    '@nuxt/ui',
-    '@nuxthub/core',
-    'nuxt-csurf'
-  ],
+  compatibilityDate: "2026-06-30",
+
+  css: ["~/assets/css/main.css"],
 
   devtools: {
-    enabled: true
+    enabled: true,
   },
 
-  css: ['~/assets/css/main.css'],
-
-  ui: {
-    experimental: {
-      componentDetection: true
-    }
+  hub: {
+    blob: true,
   },
+
+  modules: [
+    "@nuxt/ui",
+    "@nuxthub/core",
+    "nuxt-csurf",
+    "@vueuse/nuxt",
+    "nuxt-auth-utils",
+  ],
 
   runtimeConfig: {
     public: {
-      partykitHost: ''
-    }
+      partykitHost: "",
+    },
   },
 
-  compatibilityDate: '2026-06-30',
-
-  hub: {
-    blob: true
+  ui: {
+    experimental: {
+      componentDetection: true,
+    },
   },
 
   vite: {
     optimizeDeps: {
-      include: [
-        '@nuxt/ui > prosemirror-state',
-        'yjs',
-        'y-partykit/provider'
-      ]
-    }
+      include: ["@nuxt/ui > prosemirror-state", "yjs", "y-partykit/provider"],
+    },
   },
-
-  eslint: {
-    config: {
-      stylistic: {
-        commaDangle: 'never',
-        braceStyle: '1tbs'
-      }
-    }
-  }
-})
+});

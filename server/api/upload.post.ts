@@ -1,15 +1,15 @@
-import { blob } from 'hub:blob'
+import { blob } from "hub:blob";
 
-export default eventHandler(async (event) => {
-  return blob.handleUpload(event, {
-    formKey: 'file',
-    multiple: false,
+export default eventHandler(async (event) =>
+  blob.handleUpload(event, {
     ensure: {
-      maxSize: '2MB',
-      types: ['image']
+      maxSize: "2MB",
+      types: ["image"],
     },
+    formKey: "file",
+    multiple: false,
     put: {
-      addRandomSuffix: true
-    }
+      addRandomSuffix: true,
+    },
   })
-})
+);
