@@ -39,10 +39,10 @@ async function onFileChange() {
       .deleteRange({ from: pos, to: pos + 1 })
       .setImage({ src: result.url || `/images/${result.pathname}` })
       .run();
-  } catch (err) {
+  } catch (error) {
     error.value =
-      (err as Error & { data?: { message?: string } })?.data?.message ||
-      (err as Error).message ||
+      (error as Error & { data?: { message?: string } })?.data?.message ||
+      (error as Error).message ||
       "An unknown error occurred";
   } finally {
     loading.value = false;
