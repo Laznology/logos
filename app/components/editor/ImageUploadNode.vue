@@ -21,7 +21,7 @@ async function onFileChange() {
   if (!target) {
     return;
   }
-
+  const errorMessage = ref<string | null>(null);
   loading.value = true;
   error.value = null;
 
@@ -40,7 +40,7 @@ async function onFileChange() {
       .setImage({ src: result.url || `/images/${result.pathname}` })
       .run();
   } catch (error) {
-    error.value =
+    errorMessage.value =
       (error as Error & { data?: { message?: string } })?.data?.message ||
       (error as Error).message ||
       "An unknown error occurred";
