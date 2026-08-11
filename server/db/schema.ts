@@ -26,9 +26,38 @@ export const userTable = sqliteTable(
       .default(sql`(unixepoch())`),
   },
   (table) => [
-    index("idx_user_email").on(table.email),
     index("idx_user_name").on(table.name),
-    index("idx_user_username").on(table.username),
     index("idx_user_role").on(table.role),
+  ]
+);
+
+export const pageTable = sqliteTable(
+  "pages",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id").references(() => userTable.id, {
+      onDelete: "cascade",
+    }),
+    title: text("title").notNull(),
+    slug: text("slug").notNull().unique(),
+    metadata: text("metadata", { mode: "json" }),
+    content: text("content", { mode: "json" }).default({
+      type: "doc",
+      content: [],
+    }),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [
+    index("idx_page_title").on(table.title),
+    index("idx_page_author").on(table.userId),
+    index("idx_page_created_at").on(table.createdAt),
+    index("idx_page_updated_at").on(table.updatedAt),
   ]
 );
