@@ -1,5 +1,5 @@
 import { db } from "@nuxthub/db";
-import { pageTable } from "@nuxthub/db/schema";
+import { pageTable, userTable } from "@nuxthub/db/schema";
 import { and, desc, eq, sql } from "drizzle-orm";
 
 class PageService {
@@ -13,12 +13,34 @@ class PageService {
         id: pageTable.id,
         title: pageTable.title,
         slug: pageTable.slug,
+        author: {
+          name: userTable.name,
+          avatar: userTable.avatar,
+        },
         metadata: pageTable.metadata,
         createdAt: pageTable.createdAt,
       })
       .from(pageTable)
+      .leftJoin(userTable, eq(userTable.id, pageTable.userId))
       .where(eq(pageTable.userId, userId))
       .orderBy(desc(pageTable.createdAt));
+  }
+
+  async getBySlug(userId: string, slug: string) {
+    const [page] = await this.database
+      .select({
+        id: pageTable.id,
+        title: pageTable.title,
+        metadata: pageTable.metadata,
+        content: pageTable.content,
+        createdAt: pageTable.createdAt,
+        updatedAt: pageTable.createdAt,
+      })
+      .from(pageTable)
+      .where(and(eq(pageTable.slug, slug), eq(pageTable.userId, userId)))
+      .limit(1);
+
+    return page;
   }
 
   async search(userId: string, query: string) {
@@ -91,8 +113,8 @@ class PageService {
     return newPage;
   }
 
-  async update(id: string, userId: string, input: PageUpdateType) {
-    await this.getById(id, userId);
+  async update(slug: string, userId: string, input: PageUpdateType) {
+    await this.getBySlug(slug, userId);
     const updateData: Partial<typeof pageTable.$inferInsert> = {
       ...input,
       updatedAt: new Date(),
@@ -101,17 +123,17 @@ class PageService {
     const [updatedPage] = await this.database
       .update(pageTable)
       .set(updateData)
-      .where(and(eq(pageTable.id, id), eq(pageTable.userId, userId)))
+      .where(and(eq(pageTable.slug, slug), eq(pageTable.userId, userId)))
       .returning();
     return updatedPage;
   }
 
-  async delete(id: string, userId: string) {
-    await this.getById(id, userId);
+  async delete(slug: string, userId: string) {
+    await this.getById(slug, userId);
     await this.database
       .delete(pageTable)
-      .where(and(eq(pageTable.id, id), eq(pageTable.userId, userId)));
-    return { success: true, id };
+      .where(and(eq(pageTable.slug, slug), eq(pageTable.userId, userId)));
+    return { success: true, slug };
   }
 }
 
