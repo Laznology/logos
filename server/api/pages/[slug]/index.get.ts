@@ -3,11 +3,12 @@ import { pageService } from "~~/server/services/pages.service";
 export default defineProtectedHandler(
   ["admin", "editor", "user"],
   async (event) => {
+    const slug = getRouterParam(event, "slug");
     const userId = event.context.user.id;
-    const id = getRouterParam(event, "id");
+
     return {
       success: true,
-      data: await pageService.getById(id!, userId),
+      data: await pageService.getBySlug(userId, slug!),
     };
   }
 );
