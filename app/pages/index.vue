@@ -29,16 +29,6 @@ const { data: posts, pending } = await useFetch("/api/public/posts", {
   transform: (response: ApiResponse) => response.data || [],
 });
 
-const formatDate = (dateString: string | Date) => {
-  if (!dateString) {
-    return "";
-  }
-  return new Date(dateString).toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-};
 
 useSeoMeta({
   title: "Logos — Minimal Editorial Blog",
@@ -51,7 +41,6 @@ useSeoMeta({
   <div
     class="bg-default text-default selection:bg-primary/20 flex min-h-screen flex-col font-sans"
   >
-    <!-- Header -->
     <header class="bg-default/80 sticky top-0 z-30 backdrop-blur-md">
       <div
         class="mx-auto flex h-14 max-w-6xl items-center justify-between px-6"
@@ -87,10 +76,8 @@ useSeoMeta({
       </div>
     </header>
 
-    <!-- Main Body -->
     <main class="flex-1">
       <div class="mx-auto max-w-3xl px-6 py-12 sm:py-16">
-        <!-- Hero Section -->
         <div class="border-default mb-12 space-y-3 border-b pb-8">
           <h1
             class="text-highlighted text-3xl font-extrabold tracking-tight sm:text-4xl"
@@ -102,7 +89,6 @@ useSeoMeta({
           </p>
         </div>
 
-        <!-- Loading State -->
         <div v-if="pending" class="space-y-8">
           <div v-for="i in 3" :key="i" class="space-y-3 pb-8">
             <USkeleton class="bg-muted h-7 w-3/4 rounded-md" />
@@ -111,7 +97,6 @@ useSeoMeta({
           </div>
         </div>
 
-        <!-- Empty State -->
         <div
           v-else-if="!posts || posts.length === 0"
           class="flex flex-col items-center justify-center py-20 text-center"
@@ -127,7 +112,6 @@ useSeoMeta({
           </UEmpty>
         </div>
 
-        <!-- Posts List -->
         <div v-else class="divide-default divide-y">
           <article
             v-for="post in posts"
@@ -164,9 +148,13 @@ useSeoMeta({
                 </div>
 
                 <span class="opacity-40">•</span>
-                <time :datetime="String(post.createdAt)">
-                  {{ formatDate(post.createdAt) }}
-                </time>
+                <NuxtTime
+                  :datetime="post.createdAt"
+                  locale="en-US"
+                  month="long"
+                  day="numeric"
+                  year="numeric"
+                />
 
                 <span class="opacity-40">•</span>
                 <span>{{ post.wordCount }} words</span>
@@ -180,10 +168,9 @@ useSeoMeta({
       </div>
     </main>
 
-    <!-- Footer -->
     <footer class="border-default text-muted border-t py-8 text-center text-xs">
       <div class="mx-auto flex max-w-3xl items-center justify-between px-6">
-        <span>© {{ new Date().getFullYear() }} Logos</span>
+        <span>© <NuxtTime :datetime="Date.now()" year="numeric" /> Logos</span>
         <NuxtLink to="/admin" class="hover:text-highlighted transition">
           Studio →
         </NuxtLink>
