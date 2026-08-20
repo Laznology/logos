@@ -54,7 +54,6 @@ export const Completion = Extension.create<
       Escape: ({ editor }) => {
         if (this.storage.visible) {
           this.storage.clearSuggestion();
-          // Force decoration update
           editor.view.dispatch(
             editor.state.tr.setMeta("completionUpdate", true)
           );
@@ -64,12 +63,10 @@ export const Completion = Extension.create<
         return false;
       },
       "Mod-j": ({ editor }) => {
-        // Clear any existing suggestion first to avoid flickering
         if (this.storage.visible) {
           this.storage.clearSuggestion();
           this.options.onDismiss?.();
         }
-        // Manually trigger completion
         this.storage.debouncedTrigger?.(editor as Editor);
         return true;
       },
@@ -82,17 +79,13 @@ export const Completion = Extension.create<
           return false;
         }
 
-        // Store values before clearing
         const suggestion = this.storage.suggestion;
         const position = this.storage.position;
 
-        // Clear suggestion first
         this.storage.clearSuggestion();
 
-        // Force decoration update
         editor.view.dispatch(editor.state.tr.setMeta("completionUpdate", true));
 
-        // Insert the suggestion text
         editor.chain().focus().insertContentAt(position, suggestion).run();
 
         this.options.onAccept?.();
@@ -171,7 +164,6 @@ export const Completion = Extension.create<
     const { storage } = this;
     const { options } = this;
 
-    // Create debounced trigger function for this instance
     this.storage.debouncedTrigger = useDebounceFn((editor: Editor) => {
       if (!options.onTrigger) {
         return;
@@ -181,15 +173,12 @@ export const Completion = Extension.create<
       const { selection } = state;
       const { $from } = selection;
 
-      // Only suggest at end of block with content
       const isAtEndOfBlock = $from.parentOffset === $from.parent.content.size;
       const hasContent = $from.parent.textContent.trim().length > 0;
       const { textContent } = $from.parent;
 
-      // Don't trigger if sentence is complete (ends with punctuation)
       const endsWithPunctuation = /[.!?]\s*$/.test(textContent);
 
-      // Don't trigger if text ends with trigger characters
       const triggerChars = options.triggerCharacters || [];
       const endsWithTrigger = triggerChars.some((char) =>
         textContent.endsWith(char)
@@ -204,11 +193,9 @@ export const Completion = Extension.create<
         return;
       }
 
-      // Set position and mark as visible
       storage.position = selection.from;
       storage.visible = true;
 
-      // Pass editor to let the handler extract content (e.g., as markdown)
       options.onTrigger(editor);
     }, options.debounce || 250);
   },
@@ -220,22 +207,18 @@ export const Completion = Extension.create<
   onSelectionUpdate({ editor }) {
     if (this.storage.visible) {
       this.storage.clearSuggestion();
-      // Force decoration update
       editor.view.dispatch(editor.state.tr.setMeta("completionUpdate", true));
       this.options.onDismiss?.();
     }
   },
 
   onUpdate({ editor }) {
-    // Clear suggestion on any edit
     if (this.storage.visible) {
       this.storage.clearSuggestion();
-      // Force decoration update
       editor.view.dispatch(editor.state.tr.setMeta("completionUpdate", true));
       this.options.onDismiss?.();
     }
 
-    // Debounced trigger check (only if autoTrigger is enabled)
     if (this.options.autoTrigger) {
       this.storage.debouncedTrigger?.(editor as Editor);
     }

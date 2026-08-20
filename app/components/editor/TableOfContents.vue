@@ -46,7 +46,6 @@ const onItemClick = (item: TocItem) => {
     @mouseenter="onMouseEnter"
     @mouseleave="onMouseLeave"
   >
-    <!-- Notion Mini Lines Indicator -->
     <div
       class="flex flex-col items-end gap-1.5 p-2 transition-opacity duration-200"
       :class="
@@ -74,7 +73,6 @@ const onItemClick = (item: TocItem) => {
       />
     </div>
 
-    <!-- Notion Floating ToC Drawer -->
     <Transition
       enter-active-class="transition duration-200 ease-out"
       enter-from-class="opacity-0 translate-x-2 scale-95"

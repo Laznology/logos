@@ -1,4 +1,3 @@
-<!-- pages/login.vue -->
 <script setup lang="ts">
 import type { FormSubmitEvent } from "@nuxt/ui";
 import { FetchError } from "ofetch";

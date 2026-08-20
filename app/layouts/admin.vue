@@ -104,7 +104,6 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
   <UDashboardGroup
     class="bg-default text-default h-screen w-screen overflow-hidden"
   >
-    <!-- Sidebar -->
     <UDashboardSidebar
       v-model:collapsed="isCollapsed"
       collapsible
@@ -169,9 +168,7 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
       </template>
     </UDashboardSidebar>
 
-    <!-- Main Panel -->
     <UDashboardPanel class="relative min-h-0 flex-1 overflow-hidden">
-      <!-- Navbar inside the panel so it stays right of the sidebar -->
       <UDashboardNavbar>
         <template #leading>
           <div class="flex items-center gap-2">
@@ -193,13 +190,11 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
         </template>
       </UDashboardNavbar>
 
-      <!-- Panel Body -->
       <main class="flex min-h-0 flex-1 flex-col overflow-y-auto">
         <slot />
       </main>
     </UDashboardPanel>
 
-    <!-- Search Modal -->
     <UDashboardSearch
       v-model:open="isCommandPaletteOpen"
       v-model:search-term="searchQuery"

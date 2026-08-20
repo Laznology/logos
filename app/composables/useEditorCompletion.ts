@@ -21,10 +21,8 @@ export function useEditorCompletion(
   editorRef: Ref<{ editor: Editor | undefined } | null | undefined>,
   options: UseEditorCompletionOptions = {}
 ) {
-  // CSRF protection
   const { csrf, headerName } = useCsrf();
 
-  // State for direct insertion/transform mode
   const insertState = ref<{
     pos: number;
     deleteRange?: { from: number; to: number };
@@ -32,7 +30,6 @@ export function useEditorCompletion(
   const mode = ref<CompletionMode>("continue");
   const language = ref<string>();
 
-  // Helper to get completion storage
   function getCompletionStorage() {
     const storage = editorRef.value?.editor?.storage as
       | Record<string, CompletionStorage>
@@ -54,13 +51,11 @@ export function useEditorCompletion(
         getCompletionStorage()?.clearSuggestion();
       },
       onFinish: (_prompt, completionText) => {
-        // For inline suggestion mode, don't clear - let user accept with Tab
         const storage = getCompletionStorage();
         if (mode.value === "continue" && storage?.visible) {
           return;
         }
 
-        // For transform modes, insert the full completion with markdown parsing
         const transformModes = [
           "fix",
           "extend",
@@ -76,7 +71,6 @@ export function useEditorCompletion(
         ) {
           const editor = editorRef.value?.editor;
           if (editor) {
-            // Delete the original selection if not already done
             if (insertState.value.deleteRange) {
               editor
                 .chain()
@@ -84,7 +78,6 @@ export function useEditorCompletion(
                 .deleteRange(insertState.value.deleteRange)
                 .run();
             }
-            // Insert with markdown parsing
             editor
               .chain()
               .focus()
@@ -100,7 +93,6 @@ export function useEditorCompletion(
       streamProtocol: "text",
     });
 
-  // Watch completion for inline suggestion updates
   watch(completion, (newCompletion, oldCompletion) => {
     const editor = editorRef.value?.editor;
     if (!editor || !newCompletion) {
@@ -109,8 +101,6 @@ export function useEditorCompletion(
 
     const storage = getCompletionStorage();
     if (storage?.visible) {
-      // Update inline suggestion
-      // Add space prefix if needed (so preview matches what will be inserted)
       let suggestionText = newCompletion;
       if (storage.position !== undefined) {
         const textBefore = editor.state.doc.textBetween(
@@ -128,9 +118,7 @@ export function useEditorCompletion(
       storage.setSuggestion(suggestionText);
       editor.view.dispatch(editor.state.tr.setMeta("completionUpdate", true));
     } else if (insertState.value) {
-      // Direct insertion/transform mode (from toolbar actions)
 
-      // Transform modes use markdown insertion - wait for full completion
       const transformModes = [
         "fix",
         "extend",
@@ -140,11 +128,9 @@ export function useEditorCompletion(
         "translate",
       ];
       if (transformModes.includes(mode.value)) {
-        // Don't stream - will be handled in onFinish
         return;
       }
 
-      // If this is the first chunk and we have a selection to replace, delete it first
       if (insertState.value.deleteRange && !oldCompletion) {
         editor.chain().focus().deleteRange(insertState.value.deleteRange).run();
         insertState.value.deleteRange = undefined;
@@ -152,12 +138,10 @@ export function useEditorCompletion(
 
       let delta = newCompletion.slice(oldCompletion?.length || 0);
       if (delta) {
-        // For single-paragraph transforms, replace all line breaks with spaces
         if (["fix", "simplify", "translate"].includes(mode.value)) {
           delta = delta.replaceAll(/[\r\n]+/g, " ").replaceAll(/\s{2,}/g, " ");
         }
 
-        // For "continue" mode, add a space before if needed (first chunk only)
         if (mode.value === "continue" && !oldCompletion) {
           const textBefore = editor.state.doc.textBetween(
             Math.max(0, insertState.value.pos - 1),
@@ -203,7 +187,6 @@ export function useEditorCompletion(
     language.value = lang;
     const selectedText = state.doc.textBetween(selection.from, selection.to);
 
-    // Replace the selected text with the transformed version
     insertState.value = {
       deleteRange: { from: selection.from, to: selection.to },
       pos: selection.from,
@@ -223,7 +206,6 @@ export function useEditorCompletion(
       const slice = state.doc.slice(0, pos);
       return serializer.serialize(slice.content);
     }
-    // Fallback to plain text
     return state.doc.textBetween(0, pos, "\n");
   }
 
@@ -238,19 +220,16 @@ export function useEditorCompletion(
     const { selection } = state;
 
     if (selection.empty) {
-      // No selection: continue from cursor position
       const textBefore = getMarkdownBefore(editor, selection.from);
       insertState.value = { pos: selection.from };
       complete(textBefore);
     } else {
-      // Text selected: append completion after the selection
       const textBefore = getMarkdownBefore(editor, selection.to);
       insertState.value = { pos: selection.to };
       complete(textBefore);
     }
   }
 
-  // Configure Completion extension
   const extension = Completion.configure({
     onAccept: () => {
       setCompletion("");
@@ -269,7 +248,6 @@ export function useEditorCompletion(
     },
   });
 
-  // Create handlers for toolbar
   const handlers = {
     aiContinue: {
       canExecute: () => !isLoading.value,

@@ -191,7 +191,6 @@ export function extractHeadingsAndHTML(rawContent: unknown): RenderResult {
     };
   }
 
-  // 1. If content is a TipTap JSON document
   if (
     typeof content === "object" &&
     content !== null &&
@@ -223,7 +222,6 @@ export function extractHeadingsAndHTML(rawContent: unknown): RenderResult {
     }
   }
 
-  // 2. Content is a Markdown string
   const markdownString =
     typeof content === "string" ? content : String(content);
   const headings: HeadingItem[] = [];

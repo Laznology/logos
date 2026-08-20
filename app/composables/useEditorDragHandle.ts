@@ -26,7 +26,6 @@ export function useEditorDragHandle<T extends EditorCustomHandlers>(
   ): DropdownMenuItem[] => {
     const pos = selectedNode.value?.pos;
 
-    // Items for convertible block types
     if (CONVERTIBLE_TYPES.has(nodeType)) {
       return [
         {
@@ -90,7 +89,6 @@ export function useEditorDragHandle<T extends EditorCustomHandlers>(
       ];
     }
 
-    // Items for images
     if (nodeType === "image") {
       const node = pos === undefined ? null : editor.state.doc.nodeAt(pos);
       return [
@@ -103,7 +101,6 @@ export function useEditorDragHandle<T extends EditorCustomHandlers>(
       ];
     }
 
-    // Items for tables
     if (nodeType === "table") {
       return [
         {
@@ -118,7 +115,6 @@ export function useEditorDragHandle<T extends EditorCustomHandlers>(
               return;
             }
 
-            // Collect all cell ranges first
             const cellRanges: { from: number; to: number }[] = [];
 
             tableNode.descendants((node, nodePos) => {
@@ -126,7 +122,7 @@ export function useEditorDragHandle<T extends EditorCustomHandlers>(
                 node.type.name === "tableCell" ||
                 node.type.name === "tableHeader"
               ) {
-                const cellStart = pos + 1 + nodePos + 1; // Position inside the cell
+                const cellStart = pos + 1 + nodePos + 1;
                 const cellEnd = cellStart + node.content.size;
                 if (node.content.size > 0) {
                   cellRanges.push({ from: cellStart, to: cellEnd });
@@ -135,7 +131,6 @@ export function useEditorDragHandle<T extends EditorCustomHandlers>(
               return true;
             });
 
-            // Delete in reverse order so positions stay valid
             const { tr } = editor.state;
             cellRanges.reverse().forEach(({ from, to }) => {
               tr.delete(from, to);

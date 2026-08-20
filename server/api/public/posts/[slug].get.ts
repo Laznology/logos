@@ -14,7 +14,6 @@ export default defineEventHandler(async (event) => {
   const { html, headings, wordCount, readingTime, markdown } =
     extractHeadingsAndHTML(post.content);
 
-  // If client requests raw markdown (e.g. ?format=raw or /raw)
   const query = getQuery(event);
   if (query.format === "markdown" || query.format === "raw") {
     setHeader(event, "content-type", "text/markdown; charset=utf-8");
