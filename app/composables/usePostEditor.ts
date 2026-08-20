@@ -1,0 +1,116 @@
+type SavingStatus = "idle" | "saving" | "saved" | "error";
+
+interface PostApiResponse {
+  success: boolean;
+  data: PostSelectType;
+}
+
+export const usePostEditor = () => {
+  const route = useRoute();
+  const savingStatus = ref<SavingStatus>("idle");
+  const slug = computed(() => (route.params.slug as string) || "untitled");
+  const isNew = computed(() => !slug.value || slug.value === "untitled");
+
+  const post = ref<PostSelectType>({
+    id: "",
+    userId: "",
+    title: "",
+    slug: "untitled",
+    metadata: { status: "draft" },
+    content: "",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  const { $csrfFetch } = useNuxtApp();
+
+  const {
+    data: postData,
+    error,
+    pending,
+  } = useAsyncData<PostApiResponse>(
+    `admin-post-editor-${slug.value}`,
+    () => $csrfFetch(`/api/posts/${slug.value}`),
+    {
+      immediate: !isNew.value,
+      watch: [slug],
+    }
+  );
+
+  watch(
+    postData,
+    (newData) => {
+      if (newData?.data) {
+        post.value = { ...newData.data };
+      }
+    },
+    { immediate: true }
+  );
+
+  const performAutoSave = useDebounceFn(async () => {
+    if (!post.value) {
+      return;
+    }
+    savingStatus.value = "saving";
+    try {
+      if (isNew.value) {
+        const response = await $csrfFetch<PostApiResponse>("/api/posts", {
+          method: "POST",
+          body: {
+            title: post.value.title || "Untitled",
+            content: post.value.content,
+          },
+        });
+
+        if (response?.data) {
+          post.value.id = response.data.id;
+          post.value.slug = response.data.slug;
+          post.value.metadata = response.data.metadata;
+          post.value.updatedAt = response.data.updatedAt;
+          if (
+            response.data.slug &&
+            response.data.slug !== slug.value &&
+            import.meta.client
+          ) {
+            useRouter().replace(`/admin/posts/${response.data.slug}`);
+          }
+        }
+      } else {
+        const response = await $csrfFetch<PostApiResponse>(
+          `/api/posts/${slug.value}`,
+          {
+            method: "PUT",
+            body: {
+              title: post.value.title || "Untitled",
+              content: post.value.content,
+            },
+          }
+        );
+        if (response?.data) {
+          post.value.id = response.data.id;
+          post.value.metadata = response.data.metadata;
+          post.value.updatedAt = response.data.updatedAt;
+          if (
+            response.data.slug &&
+            response.data.slug !== slug.value &&
+            import.meta.client
+          ) {
+            post.value.slug = response.data.slug;
+            useRouter().replace(`/admin/posts/${response.data.slug}`);
+          }
+        }
+      }
+      savingStatus.value = "saved";
+    } catch {
+      savingStatus.value = "error";
+    }
+  }, 1000);
+
+  return {
+    post,
+    performAutoSave,
+    pending,
+    error,
+    savingStatus,
+  };
+};
