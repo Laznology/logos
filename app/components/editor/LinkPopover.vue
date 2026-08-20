@@ -119,7 +119,6 @@ function handleKeyDown(event: KeyboardEvent) {
       <div class="flex items-center gap-1 p-1">
         <UInput
           v-model="url"
-          autofocus
           name="url"
           type="url"
           variant="none"
