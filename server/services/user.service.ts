@@ -1,5 +1,5 @@
-import { db } from "@nuxthub/db";
-import { userTable } from "@nuxthub/db/schema";
+import { db } from "hub:db";
+import { userTable } from "hub:db:schema";
 
 class UserService {
   private readonly database: typeof db;

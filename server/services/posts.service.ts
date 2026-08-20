@@ -1,5 +1,5 @@
-import { db } from "@nuxthub/db";
-import { postTable, userTable } from "@nuxthub/db/schema";
+import { db } from "hub:db";
+import { postTable, userTable } from "hub:db:schema";
 import type { SQL } from "drizzle-orm";
 import { and, desc, eq, sql } from "drizzle-orm";
 

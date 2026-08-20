@@ -1,4 +1,4 @@
-import { userTable } from "@nuxthub/db/schema";
+import { userTable } from "hub:db:schema";
 import { or, eq } from "drizzle-orm";
 import * as v from "valibot";
 
