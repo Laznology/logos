@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { marked } from "marked";
+
 const props = defineProps<{
   post: PostSelectType;
   statusText: string;
@@ -24,6 +26,14 @@ const publicUrl = computed(() => {
     return `${window.location.origin}/posts/${props.post.slug}`;
   }
   return `/posts/${props.post.slug}`;
+});
+
+const draftPreviewHtml = computed(() => {
+  const content = props.post.content;
+  if (typeof content !== "string" || !content) {
+    return "";
+  }
+  return marked.parse(content, { async: false });
 });
 
 const copyPublicUrl = async () => {
@@ -109,7 +119,7 @@ const dropdownItems = computed(() => [
   <div class="flex items-center gap-2">
     <span class="text-muted mr-1 text-xs">{{ statusText }}</span>
 
-    <UPopover>
+    <UPopover :content="{ onOpenAutoFocus: (event) => event.preventDefault() }">
       <UButton
         :icon="isPublished ? 'i-lucide-globe' : 'i-lucide-lock'"
         :variant="isPublished ? 'subtle' : 'outline'"
@@ -130,23 +140,19 @@ const dropdownItems = computed(() => [
           </div>
 
           <div
-            class="border-default bg-elevated space-y-3 rounded-lg border p-4 shadow-inner"
+            class="border-default bg-elevated h-48 overflow-hidden rounded-lg border shadow-inner"
           >
-            <div class="flex items-center justify-between text-xs opacity-60">
-              <span class="max-w-[150px] truncate">{{
-                post.title || "Untitled"
-              }}</span>
-              <div class="flex items-center gap-1">
-                <span class="bg-muted size-1.5 rounded-full" />
-                <span class="bg-muted size-1.5 rounded-full" />
-                <span class="bg-muted size-1.5 rounded-full" />
-              </div>
-            </div>
-            <div class="py-4 text-center">
-              <h5 class="text-highlighted line-clamp-2 text-base font-bold">
-                {{ post.title || "Untitled" }}
-              </h5>
-            </div>
+            <iframe
+              v-if="isPublished"
+              :src="publicUrl"
+              title="Public post preview"
+              class="size-full border-0"
+            />
+            <article
+              v-else
+              class="prose prose-sm dark:prose-invert h-full max-w-none overflow-y-auto p-4"
+              v-html="draftPreviewHtml"
+            />
           </div>
 
           <div v-if="!isPublished" class="space-y-3">
