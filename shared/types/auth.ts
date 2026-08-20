@@ -1,3 +1,4 @@
+import type { Role } from "@nuxthub/db/schema";
 import * as v from "valibot";
 
 export const signInSchema = v.object({
@@ -26,5 +27,9 @@ export const signUpSchema = v.object({
   ),
 });
 
+export interface AuthUser {
+  id: string;
+  role: Role;
+}
 export type SignInType = v.InferOutput<typeof signInSchema>;
 export type SignUpType = v.InferOutput<typeof signUpSchema>;

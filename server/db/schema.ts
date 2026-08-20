@@ -31,8 +31,8 @@ export const userTable = sqliteTable(
   ]
 );
 
-export const pageTable = sqliteTable(
-  "pages",
+export const postTable = sqliteTable(
+  "posts",
   {
     id: text("id")
       .primaryKey()
@@ -55,9 +55,9 @@ export const pageTable = sqliteTable(
       .default(sql`(unixepoch())`),
   },
   (table) => [
-    index("idx_page_title").on(table.title),
-    index("idx_page_author").on(table.userId),
-    index("idx_page_created_at").on(table.createdAt),
-    index("idx_page_updated_at").on(table.updatedAt),
+    index("idx_post_title").on(table.title),
+    index("idx_post_author").on(table.userId),
+    index("idx_post_created_at").on(table.createdAt),
+    index("idx_post_updated_at").on(table.updatedAt),
   ]
 );

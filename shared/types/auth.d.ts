@@ -10,9 +10,3 @@ declare module "#auth-utils" {
     role: Role;
   }
 }
-
-declare module "h3" {
-  interface H3EventContext {
-    user?: User | null;
-  }
-}
