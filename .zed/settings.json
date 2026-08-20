@@ -2,6 +2,26 @@
   "format_on_save": "on",
   "formatter": "language_server",
   "lsp": {
+    "vue-language-server": {
+      "initialization_options": {
+        "typescript": {
+          "tsdk": "node_modules/typescript/lib"
+        }
+      },
+      "settings": {
+        "vue.inlayHints.inlineHandlerLeading": true,
+        "vue.inlayHints.missingProps": true,
+        "vue.inlayHints.optionsWrapper": true,
+        "vue.inlayHints.vBindShorthand": true
+      }
+    },
+    "vtsls": {
+      "initialization_options": {
+        "typescript": {
+          "tsdk": "node_modules/typescript/lib"
+        }
+      }
+    },
     "typescript-language-server": {
       "settings": {
         "typescript": {
@@ -32,6 +52,13 @@
           "run": "onType",
           "typeAware": true,
           "unusedDisableDirectives": "deny"
+        }
+      }
+    },
+    "tailwindcss-language-server": {
+      "settings": {
+        "includeLanguages": {
+          "vue": "html"
         }
       }
     }

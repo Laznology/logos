@@ -1,10 +1,13 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: "2026-06-30",
+
   css: ["~/assets/css/main.css"],
+
   devtools: {
     enabled: true,
   },
+
   hub: {
     blob: true,
     db: {
@@ -20,21 +23,35 @@ export default defineNuxtConfig({
     "nuxt-auth-utils",
   ],
 
-  runtimeConfig: {
-    public: {
-      partykitHost: "",
-    },
-  },
-
   ui: {
     experimental: {
       componentDetection: true,
     },
   },
 
+  sourcemap: {
+    server: false,
+    client: false,
+  },
+
+  experimental: {
+    inlineRouteRules: true,
+  },
+
+  nitro: {
+    minify: true,
+    prerender: {
+      crawlLinks: false,
+    },
+  },
+
   vite: {
+    build: {
+      cssMinify: true,
+      minify: true,
+    },
     optimizeDeps: {
-      include: ["@nuxt/ui > prosemirror-state", "yjs", "y-partykit/provider"],
+      include: ["@nuxt/ui > prosemirror-state"],
     },
   },
 });

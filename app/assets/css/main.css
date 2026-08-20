@@ -1,5 +1,6 @@
 @import "tailwindcss" theme(static);
 @import "@nuxt/ui";
+@plugin "@tailwindcss/typography";
 
 @theme {
   --font-sans: "Public Sans", sans-serif;
@@ -10,37 +11,14 @@
 }
 
 .dark {
-  --ui-bg: black;
+  --ui-bg: #191919;
+  --ui-bg-muted: #202020;
+  --ui-bg-elevated: #262626;
+  --ui-bg-accented: #2f2f2f;
 }
 
 html.dark .tiptap .shiki,
 html.dark .tiptap .shiki span {
   color: var(--shiki-dark) !important;
   background-color: var(--ui-bg-muted) !important;
-}
-
-/* Collaboration carets */
-.collaboration-carets__caret {
-  border-left: 1px solid #0d0d0d;
-  border-right: 1px solid #0d0d0d;
-  margin-left: -1px;
-  margin-right: -1px;
-  pointer-events: none;
-  position: relative;
-  word-break: normal;
-}
-
-.collaboration-carets__label {
-  border-radius: 3px 3px 3px 0;
-  color: #0d0d0d;
-  font-size: 12px;
-  font-style: normal;
-  font-weight: 600;
-  left: -1px;
-  line-height: normal;
-  padding: 0.1rem 0.3rem;
-  position: absolute;
-  top: -1.4em;
-  user-select: none;
-  white-space: nowrap;
 }

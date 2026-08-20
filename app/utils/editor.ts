@@ -131,10 +131,5 @@ export const editorSuggestionItems: EditorSuggestionMenuItem[][] = [
       label: "Code Block",
       icon: "i-lucide-square-code",
     },
-    {
-      kind: "horizontalRule",
-      label: "Divider",
-      icon: "i-lucide-separator-horizontal",
-    },
   ],
 ];

@@ -63,13 +63,9 @@ This template includes AI-powered writing assistance using the [Vercel AI SDK](h
 
 For local development, set your API key in `.env`:
 
-```bash
+````bash
 AI_GATEWAY_API_KEY=<your-vercel-ai-gateway-api-key>
-```
 
-> [!TIP] With [Vercel AI Gateway](https://vercel.com/docs/ai-gateway), you don't need individual API keys for OpenAI, Anthropic, etc. It provides a unified API to access hundreds of models through a single endpoint with automatic load balancing, fallbacks, and spend monitoring.
-
-### Blob Storage (Optional)
 
 This template uses [NuxtHub Blob](https://hub.nuxt.com/docs/blob) for image uploads, which supports multiple storage drivers:
 
@@ -82,7 +78,7 @@ For **Vercel Blob**, assign a Blob Store to your project from the Vercel dashboa
 
 ```bash
 BLOB_READ_WRITE_TOKEN=<your-vercel-blob-token>
-```
+````
 
 > [!NOTE] See the [NuxtHub Blob documentation](https://hub.nuxt.com/docs/blob#set-a-driver) for configuring other storage drivers.
 

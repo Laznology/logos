@@ -186,7 +186,8 @@ export function useEditorDragHandle<T extends EditorCustomHandlers>(
               const { pos } = selectedNode.value;
               const node = editor.state.doc.nodeAt(pos);
               if (node) {
-                await navigator.clipboard.writeText(node.textContent);
+                const { copy } = useClipboard();
+                await copy(node.textContent);
               }
             },
           },

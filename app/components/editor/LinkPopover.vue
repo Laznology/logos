@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Editor } from "@tiptap/vue-3";
+import "@tiptap/extension-link";
 
 const props = defineProps<{
   editor: Editor;
@@ -57,7 +58,6 @@ function setLink() {
 
   let chain = props.editor.chain().focus();
 
-  // When linking code, extend the code mark range first to select the full code
   if (hasCode && !isEmpty) {
     chain = chain.extendMarkRange("code").setLink({ href: url.value });
   } else {
@@ -116,48 +116,48 @@ function handleKeyDown(event: KeyboardEvent) {
     </UTooltip>
 
     <template #content>
-      <UInput
-        v-model="url"
-        autofocus
-        name="url"
-        type="url"
-        variant="none"
-        placeholder="Paste a link..."
-        @keydown="handleKeyDown"
-      >
-        <div class="mr-0.5 flex items-center">
-          <UButton
-            icon="i-lucide-corner-down-left"
-            variant="ghost"
-            size="sm"
-            :disabled="!url && !active"
-            title="Apply link"
-            @click="setLink"
-          />
+      <div class="flex items-center gap-1 p-1">
+        <UInput
+          v-model="url"
+          autofocus
+          name="url"
+          type="url"
+          variant="none"
+          placeholder="Paste a link..."
+          class="w-60 text-xs"
+          @keydown="handleKeyDown"
+        />
 
-          <USeparator orientation="vertical" class="mx-1 h-6" />
+        <UButton
+          icon="i-lucide-corner-down-left"
+          variant="ghost"
+          size="sm"
+          :disabled="!url && !active"
+          title="Apply link"
+          @click="setLink"
+        />
 
-          <UButton
-            icon="i-lucide-external-link"
-            color="neutral"
-            variant="ghost"
-            size="sm"
-            :disabled="!url && !active"
-            title="Open in new window"
-            @click="openLink"
-          />
+        <USeparator orientation="vertical" class="mx-1 h-6" />
 
-          <UButton
-            icon="i-lucide-trash"
-            color="neutral"
-            variant="ghost"
-            size="sm"
-            :disabled="!url && !active"
-            title="Remove link"
-            @click="removeLink"
-          />
-        </div>
-      </UInput>
+        <UButton
+          icon="i-lucide-external-link"
+          variant="ghost"
+          size="sm"
+          :disabled="!url"
+          title="Open in new window"
+          @click="openLink"
+        />
+
+        <UButton
+          icon="i-lucide-trash"
+          variant="ghost"
+          color="error"
+          size="sm"
+          :disabled="!active"
+          title="Remove link"
+          @click="removeLink"
+        />
+      </div>
     </template>
   </UPopover>
 </template>
