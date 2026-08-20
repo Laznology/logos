@@ -141,7 +141,6 @@ const deletePost = async () => {
       </Teleport>
     </ClientOnly>
 
-    <!-- Admin Floating ToC (Notion-Style) -->
     <TableOfContentsView
       :items="adminTocItems"
       :active-id="activeTocId"
@@ -178,7 +177,7 @@ const deletePost = async () => {
           v-model="post.title"
           type="text"
           placeholder="Untitled"
-          class="text-highlighted placeholder:text-muted/40 mb-6 w-full border-none bg-transparent text-4xl font-extrabold outline-none focus:ring-0 focus:outline-none sm:pl-12 sm:text-5xl"
+          class="text-highlighted placeholder:text-muted/40 mb-6 w-full border-none bg-transparent text-4xl font-extrabold outline-none focus:ring-0 focus:outline-none sm:pl-8 sm:text-5xl"
           @input="performAutoSave"
         />
 
