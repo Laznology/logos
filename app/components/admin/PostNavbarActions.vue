@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { marked } from "marked";
 
 const props = defineProps<{
   post: PostSelectType;
@@ -26,14 +25,6 @@ const publicUrl = computed(() => {
     return `${window.location.origin}/posts/${props.post.slug}`;
   }
   return `/posts/${props.post.slug}`;
-});
-
-const draftPreviewHtml = computed(() => {
-  const content = props.post.content;
-  if (typeof content !== "string" || !content) {
-    return "";
-  }
-  return marked.parse(content, { async: false });
 });
 
 const copyPublicUrl = async () => {
@@ -120,13 +111,8 @@ const dropdownItems = computed(() => [
     <span class="text-muted mr-1 text-xs">{{ statusText }}</span>
 
     <UPopover :content="{ onOpenAutoFocus: (event) => event.preventDefault() }">
-      <UButton
-        :icon="isPublished ? 'i-lucide-globe' : 'i-lucide-lock'"
-        :variant="isPublished ? 'subtle' : 'outline'"
-        :color="isPublished ? 'primary' : 'neutral'"
-        size="sm"
-        :label="isPublished ? 'Published' : 'Publish'"
-      />
+      <UButton :icon="isPublished ? 'i-lucide-globe' : 'i-lucide-lock'" :variant="isPublished ? 'subtle' : 'outline'"
+        :color="isPublished ? 'primary' : 'neutral'" size="sm" :label="isPublished ? 'Published' : 'Publish'" />
 
       <template #content>
         <div class="w-80 space-y-4 p-4 sm:w-96">
@@ -140,30 +126,17 @@ const dropdownItems = computed(() => [
           </div>
 
           <div
-            class="border-default bg-elevated h-48 overflow-hidden rounded-lg border shadow-inner"
-          >
-            <iframe
-              v-if="isPublished"
-              :src="publicUrl"
-              title="Public post preview"
-              class="size-full border-0"
-            />
-            <article
-              v-else
-              class="prose prose-sm dark:prose-invert h-full max-w-none overflow-y-auto p-4"
-              v-html="draftPreviewHtml"
-            />
+            class="border-default bg-elevated h-32 flex flex-col items-center justify-center overflow-hidden rounded-lg border shadow-inner p-4 text-center">
+            <UIcon name="i-lucide-file-text" class="text-muted size-8 mb-2 opacity-50" />
+            <span class="text-highlighted font-semibold line-clamp-2 text-sm">
+              {{ post.title || "Untitled" }}
+            </span>
+            <span class="text-muted text-xs mt-1">/{{ post.slug }}</span>
           </div>
 
           <div v-if="!isPublished" class="space-y-3">
-            <UButton
-              block
-              color="primary"
-              size="md"
-              label="Publish"
-              :loading="isUpdatingPublish"
-              @click="togglePublish(true)"
-            />
+            <UButton block color="primary" size="md" label="Publish" :loading="isUpdatingPublish"
+              @click="togglePublish(true)" />
             <div class="text-muted flex items-start gap-2 text-xs">
               <UIcon name="i-lucide-info" class="mt-0.5 size-4 shrink-0" />
               <span>
@@ -175,62 +148,26 @@ const dropdownItems = computed(() => [
 
           <div v-else class="space-y-3">
             <div class="flex items-center gap-1.5">
-              <UInput
-                readonly
-                :model-value="publicUrl"
-                size="sm"
-                class="flex-1 text-xs"
-              />
-              <UButton
-                size="sm"
-                color="neutral"
-                variant="outline"
-                icon="i-lucide-copy"
-                @click="copyPublicUrl"
-              />
+              <UInput readonly :model-value="publicUrl" size="sm" class="flex-1 text-xs" />
+              <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-copy" @click="copyPublicUrl" />
             </div>
 
             <div class="flex items-center justify-between pt-1">
-              <UButton
-                size="xs"
-                color="primary"
-                variant="ghost"
-                icon="i-lucide-external-link"
-                label="View site"
-                :to="publicUrl"
-                target="_blank"
-              />
-              <UButton
-                size="xs"
-                color="error"
-                variant="ghost"
-                label="Unpublish"
-                :loading="isUpdatingPublish"
-                @click="togglePublish(false)"
-              />
+              <UButton size="xs" color="primary" variant="ghost" icon="i-lucide-external-link" label="View site"
+                :to="publicUrl" target="_blank" />
+              <UButton size="xs" color="error" variant="ghost" label="Unpublish" :loading="isUpdatingPublish"
+                @click="togglePublish(false)" />
             </div>
           </div>
         </div>
       </template>
     </UPopover>
 
-    <UButton
-      variant="ghost"
-      color="neutral"
-      icon="i-lucide-link"
-      size="sm"
-      aria-label="Copy Link"
-      @click="emit('copyLink')"
-    />
+    <UButton variant="ghost" color="neutral" icon="i-lucide-link" size="sm" aria-label="Copy Link"
+      @click="emit('copyLink')" />
 
     <UDropdownMenu :items="dropdownItems">
-      <UButton
-        variant="ghost"
-        color="neutral"
-        size="sm"
-        icon="i-lucide-more-horizontal"
-        aria-label="More actions"
-      />
+      <UButton variant="ghost" color="neutral" size="sm" icon="i-lucide-more-horizontal" aria-label="More actions" />
     </UDropdownMenu>
   </div>
 </template>

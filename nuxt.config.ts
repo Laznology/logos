@@ -35,6 +35,7 @@ export default defineNuxtConfig({
 
   experimental: {
     inlineRouteRules: true,
+    viewTransition: true,
   },
 
   nitro: {
@@ -50,7 +51,20 @@ export default defineNuxtConfig({
       minify: true,
     },
     optimizeDeps: {
-      include: ["@nuxt/ui > prosemirror-state"],
+      include: [
+        "@nuxt/ui > prosemirror-state",
+        "@nuxt/ui > prosemirror-transform",
+        "@nuxt/ui > prosemirror-model",
+        "@nuxt/ui > prosemirror-view",
+        "@nuxt/ui > prosemirror-gapcursor",
+        "prosemirror-tables",
+        "@tiptap/pm > prosemirror-state",
+        "@tiptap/pm > prosemirror-transform",
+        "@tiptap/pm > prosemirror-model",
+        "@tiptap/pm > prosemirror-view",
+        "@tiptap/pm > prosemirror-gapcursor",
+      ],
+      exclude: ["@tiptap/extension-table"],
     },
   },
 });

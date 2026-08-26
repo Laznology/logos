@@ -68,6 +68,11 @@ export const editorToolbarItems: EditorToolbarItem[][] = [
       tooltip: { text: "Code" },
     },
   ],
+  [
+    { slot: "color", tooltip: { text: "Text Color" } },
+    { slot: "highlight", tooltip: { text: "Background Color" } },
+    { slot: "link", tooltip: { text: "Link" } },
+  ],
 ];
 
 export const editorSuggestionItems: EditorSuggestionMenuItem[][] = [
@@ -130,6 +135,16 @@ export const editorSuggestionItems: EditorSuggestionMenuItem[][] = [
       kind: "codeBlock",
       label: "Code Block",
       icon: "i-lucide-square-code",
+    },
+    {
+      kind: "image",
+      label: "Image",
+      icon: "i-lucide-image",
+    },
+    {
+      kind: "table",
+      label: "Table",
+      icon: "i-lucide-table",
     },
   ],
 ];
