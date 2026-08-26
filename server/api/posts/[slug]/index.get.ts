@@ -1,3 +1,4 @@
+import { extractHeadingsAndHTML } from "~~/server/utils/tiptap-renderer";
 import { postService } from "~~/server/services/posts.service";
 
 export default defineProtectedHandler(async (event) => {
@@ -16,5 +17,9 @@ export default defineProtectedHandler(async (event) => {
       statusMessage: "Post not found",
     });
   }
-  return { success: true, data: post };
+  const previewHtml =
+    getQuery(event).preview === "1"
+      ? extractHeadingsAndHTML(post.content).html
+      : undefined;
+  return { success: true, data: post, previewHtml };
 });
