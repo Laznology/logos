@@ -1,9 +1,12 @@
 import type { Extensions, JSONContent } from "@tiptap/core";
 import { Node, mergeAttributes } from "@tiptap/core";
+import { Color } from "@tiptap/extension-color";
 import Heading from "@tiptap/extension-heading";
+import { Highlight } from "@tiptap/extension-highlight";
 import Image from "@tiptap/extension-image";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
 import { TableKit } from "@tiptap/extension-table";
+import { TextStyle } from "@tiptap/extension-text-style";
 import { generateHTML } from "@tiptap/html";
 import StarterKit from "@tiptap/starter-kit";
 import { Marked } from "marked";
@@ -86,6 +89,9 @@ const rendererExtensions: Extensions = [
     },
   }) as unknown as Extensions[number],
   ImageUploadExtension as unknown as Extensions[number],
+  Highlight.configure({ multicolor: true }) as unknown as Extensions[number],
+  TextStyle as unknown as Extensions[number],
+  Color as unknown as Extensions[number],
 ];
 
 function getNodeText(node: JSONContent): string {
@@ -232,9 +238,62 @@ export function extractHeadingsAndHTML(rawContent: unknown): RenderResult {
     breaks: true,
   });
 
+  const highlightExtension = {
+    name: "highlight",
+    level: "inline" as const,
+    start(src: string) {
+      return src.match(/==/)?.index;
+    },
+    tokenizer(this: any, src: string) {
+      const rule = /^==([^=]+)==/;
+      const match = rule.exec(src);
+      if (match) {
+        const token = {
+          type: "highlight",
+          raw: match[0],
+          text: match[1],
+          tokens: [],
+        };
+        this.lexer.inlineTokens(token.text, token.tokens);
+        return token;
+      }
+    },
+    renderer(this: any, token: any) {
+      return `<mark>${this.parser.parseInline(token.tokens)}</mark>`;
+    },
+  };
+
+  const underlineExtension = {
+    name: "underline",
+    level: "inline" as const,
+    start(src: string) {
+      return src.match(/\+\+/)?.index;
+    },
+    tokenizer(this: any, src: string) {
+      const rule = /^\+\+([^\n]+?)\+\+/;
+      const match = rule.exec(src);
+      if (match) {
+        const token = {
+          type: "underline",
+          raw: match[0],
+          text: match[1],
+          tokens: [],
+        };
+        this.lexer.inlineTokens(token.text, token.tokens);
+        return token;
+      }
+    },
+    renderer(this: any, token: any) {
+      return `<u>${this.parser.parseInline(token.tokens)}</u>`;
+    },
+  };
+
+  marked.use({ extensions: [highlightExtension, underlineExtension] });
   marked.use({
     renderer: {
-      heading({ depth, text }) {
+      heading(this: any, token: any) {
+        const depth = token.depth;
+        const text = token.text;
         headingIndex += 1;
         const cleanText = text
           .replaceAll(/<[^>]*>/g, "")
@@ -249,7 +308,7 @@ export function extractHeadingsAndHTML(rawContent: unknown): RenderResult {
         const id = `${slug}-${headingIndex}`;
 
         headings.push({ id, text: cleanText, level: depth });
-        const inlineHtml = marked.parseInline(text);
+        const inlineHtml = this.parser.parseInline(token.tokens);
         return `<h${depth} id="${id}">${inlineHtml}</h${depth}>\n`;
       },
     },

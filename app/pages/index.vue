@@ -49,19 +49,11 @@ useSeoMeta({
           to="/"
           class="text-highlighted flex items-center gap-2 font-semibold transition hover:opacity-80"
         >
-          <UIcon name="i-lucide-box" class="text-primary size-5" />
-          <span class="text-sm tracking-tight">Logos</span>
+          <UIcon name="i-lucide-house" class="text-primary size-5" />
+          <span class="text-sm tracking-tight">Home</span>
         </NuxtLink>
 
         <div class="flex items-center gap-2">
-          <UButton
-            to="/admin"
-            variant="ghost"
-            color="neutral"
-            size="sm"
-            icon="i-lucide-pen-line"
-            label="Studio"
-          />
           <UButton
             variant="ghost"
             color="neutral"
@@ -168,13 +160,6 @@ useSeoMeta({
       </div>
     </main>
 
-    <footer class="border-default text-muted border-t py-8 text-center text-xs">
-      <div class="mx-auto flex max-w-3xl items-center justify-between px-6">
-        <span>© <NuxtTime :datetime="Date.now()" year="numeric" /> Logos</span>
-        <NuxtLink to="/admin" class="hover:text-highlighted transition">
-          Studio →
-        </NuxtLink>
-      </div>
-    </footer>
+    <AppFooter />
   </div>
 </template>

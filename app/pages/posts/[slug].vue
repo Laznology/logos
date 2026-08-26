@@ -36,6 +36,14 @@ const slug = computed(() => route.params.slug as string);
 const colorMode = useColorMode();
 const toast = useToast();
 const { copy, isSupported } = useClipboard();
+const { y } = useWindowScroll();
+
+const readingProgress = computed(() => {
+  if (import.meta.server) return 0;
+  const element = document.documentElement;
+  const totalHeight = element.scrollHeight - element.clientHeight;
+  return totalHeight > 0 ? Math.min(100, Math.max(0, (y.value / totalHeight) * 100)) : 0;
+});
 
 const activeHeadingId = ref<string>("");
 
@@ -60,7 +68,7 @@ const wordCountText = computed(() => {
 });
 
 const breadcrumbItems = computed(() => [
-  { label: "Logos", icon: "i-lucide-box", to: "/" },
+  { label: "Home", icon: "i-lucide-house", to: "/" },
   { label: post.value?.title || "Untitled" },
 ]);
 
@@ -160,45 +168,24 @@ useSeoMeta({
 </script>
 
 <template>
-  <div
-    class="bg-default text-default selection:bg-primary/20 flex min-h-screen flex-col"
-  >
+  <div class="bg-default text-default selection:bg-primary/20 flex min-h-screen flex-col">
+    <div class="fixed top-0 left-0 h-1 bg-primary z-50 transition-all duration-150 ease-out"
+      :style="{ width: `${readingProgress}%` }" />
     <header class="bg-default/80 sticky top-0 z-30 backdrop-blur-md">
-      <div
-        class="mx-auto flex h-14 max-w-6xl items-center justify-between px-6"
-      >
-        <UBreadcrumb :items="breadcrumbItems" class="text-sm" />
+      <div class="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
+        <UBreadcrumb :items="breadcrumbItems" separator="i-lucide-slash" class="text-sm" />
 
         <div class="flex items-center gap-2">
           <UFieldGroup v-if="post">
-            <UButton
-              variant="outline"
-              color="neutral"
-              size="sm"
-              icon="i-lucide-clipboard"
-              label="Copy page"
-              @click="copyPageAsMarkdown"
-            />
+            <UButton variant="outline" color="neutral" size="sm" icon="i-lucide-clipboard" label="Copy page"
+              @click="copyPageAsMarkdown" />
             <UDropdownMenu :items="dropdownItems">
-              <UButton
-                variant="outline"
-                color="neutral"
-                size="sm"
-                icon="i-lucide-chevron-down"
-              />
+              <UButton variant="outline" color="neutral" size="sm" icon="i-lucide-chevron-down" />
             </UDropdownMenu>
           </UFieldGroup>
 
-          <UButton
-            variant="ghost"
-            color="neutral"
-            size="sm"
-            :icon="
-              colorMode.value === 'dark' ? 'i-lucide-moon' : 'i-lucide-sun'
-            "
-            aria-label="Toggle theme"
-            @click="toggleTheme"
-          />
+          <UButton variant="ghost" color="neutral" size="sm" :icon="colorMode.value === 'dark' ? 'i-lucide-moon' : 'i-lucide-sun'
+            " aria-label="Toggle theme" @click="toggleTheme" />
         </div>
       </div>
     </header>
@@ -216,15 +203,10 @@ useSeoMeta({
         <USkeleton class="bg-muted mt-8 h-96 w-full rounded-lg" />
       </div>
 
-      <div
-        v-else-if="error || !post"
-        class="mx-auto flex max-w-3xl flex-col items-center justify-center px-6 py-32 text-center"
-      >
-        <UEmpty
-          icon="i-lucide-file-x"
-          title="Post not available"
-          description="This post doesn't exist or is currently kept as a private draft."
-        >
+      <div v-else-if="error || !post"
+        class="mx-auto flex max-w-3xl flex-col items-center justify-center px-6 py-32 text-center">
+        <UEmpty icon="i-lucide-file-x" title="Post not available"
+          description="This post doesn't exist or is currently kept as a private draft.">
           <template #actions>
             <UButton to="/" icon="i-lucide-house"> Go to Home </UButton>
           </template>
@@ -233,34 +215,23 @@ useSeoMeta({
 
       <div v-else class="relative">
         <div class="relative mx-auto max-w-3xl px-6 py-12 sm:py-16">
-          <aside
-            v-if="post.headings && post.headings.length > 0"
-            class="absolute top-16 bottom-0 left-full ml-10 hidden w-56 xl:block"
-          >
+          <aside v-if="post.headings && post.headings.length > 0"
+            class="absolute top-16 bottom-0 left-full ml-10 hidden w-56 xl:block">
             <div class="sticky top-24">
-              <span
-                class="text-muted mb-4 block text-xs font-bold tracking-widest uppercase"
-                >On this page</span
-              >
+              <span class="text-muted mb-4 block text-xs font-bold tracking-widest uppercase">On this page</span>
               <nav class="border-default border-l text-sm">
-                <button
-                  v-for="item in post.headings"
-                  :key="item.id"
-                  type="button"
+                <button v-for="item in post.headings" :key="item.id" type="button"
                   class="-ml-px block w-full cursor-pointer border-l-2 py-1 text-left transition-colors duration-200"
                   :class="[
                     activeHeadingId === item.id
                       ? 'border-primary text-primary font-medium'
                       : 'text-muted hover:text-highlighted hover:border-muted border-transparent',
-                  ]"
-                  :style="{
+                  ]" :style="{
                     paddingLeft: `${(item.level - 1) * 0.75 + 0.875}rem`,
-                  }"
-                  @click="scrollToHeading(item)"
-                >
+                  }" @click="scrollToHeading(item)">
                   <span class="line-clamp-2 leading-relaxed">{{
                     item.text
-                  }}</span>
+                    }}</span>
                 </button>
               </nav>
             </div>
@@ -268,41 +239,22 @@ useSeoMeta({
 
           <article class="w-full">
             <header class="mb-8 space-y-4">
-              <h1
-                class="text-highlighted text-4xl leading-tight font-extrabold tracking-tight sm:text-5xl"
-              >
+              <h1 class="text-highlighted text-4xl leading-tight font-extrabold tracking-tight sm:text-5xl">
                 {{ post.title || "Untitled" }}
               </h1>
 
-              <div
-                class="border-default text-muted flex flex-wrap items-center gap-x-3 gap-y-2 border-b pb-6 text-sm"
-              >
+              <div class="border-default text-muted flex flex-wrap items-center gap-x-3 gap-y-2 border-b pb-6 text-sm">
                 <div class="flex items-center gap-2">
-                  <UAvatar
-                    v-if="post.author?.avatar"
-                    :src="post.author.avatar"
-                    :alt="post.author.name || 'Author'"
-                    size="sm"
-                  />
-                  <UAvatar
-                    v-else
-                    icon="i-lucide-user"
-                    size="sm"
-                    color="neutral"
-                  />
+                  <UAvatar v-if="post.author?.avatar" :src="post.author.avatar" :alt="post.author.name || 'Author'"
+                    size="sm" />
+                  <UAvatar v-else icon="i-lucide-user" size="sm" color="neutral" />
                   <span class="text-highlighted font-medium">{{
                     post.author?.name || "Author"
-                  }}</span>
+                    }}</span>
                 </div>
 
                 <span class="opacity-40">•</span>
-                <NuxtTime
-                  :datetime="post.createdAt"
-                  locale="en-US"
-                  month="long"
-                  day="numeric"
-                  year="numeric"
-                />
+                <NuxtTime :datetime="post.createdAt" locale="en-US" month="long" day="numeric" year="numeric" />
 
                 <span class="opacity-40">•</span>
                 <span>{{ wordCountText }}</span>
@@ -312,58 +264,32 @@ useSeoMeta({
               </div>
             </header>
 
-            <div
-              v-if="post.headings && post.headings.length > 0"
-              class="border-default bg-default/80 sticky top-[3.5rem] z-20 -mx-6 mb-10 border-b px-6 py-4 backdrop-blur-md xl:hidden"
-            >
+            <div v-if="post.headings && post.headings.length > 0"
+              class="border-default bg-default/80 sticky top-[3.5rem] z-20 -mx-6 mb-10 border-b px-6 py-4 backdrop-blur-md xl:hidden">
               <details class="group">
                 <summary
-                  class="text-highlighted flex cursor-pointer items-center justify-between text-sm font-semibold"
-                >
+                  class="text-highlighted flex cursor-pointer items-center justify-between text-sm font-semibold">
                   Table of Contents
-                  <UIcon
-                    name="i-lucide-chevron-down"
-                    class="size-4 transition-transform group-open:rotate-180"
-                  />
+                  <UIcon name="i-lucide-chevron-down" class="size-4 transition-transform group-open:rotate-180" />
                 </summary>
                 <nav class="mt-3 space-y-1.5 text-sm">
-                  <button
-                    v-for="item in post.headings"
-                    :key="item.id"
-                    type="button"
-                    class="block w-full cursor-pointer text-left transition-colors"
-                    :class="[
+                  <button v-for="item in post.headings" :key="item.id" type="button"
+                    class="block w-full cursor-pointer text-left transition-colors" :class="[
                       activeHeadingId === item.id
                         ? 'text-primary font-medium'
                         : 'text-muted hover:text-highlighted',
-                    ]"
-                    :style="{ paddingLeft: `${(item.level - 1) * 1}rem` }"
-                    @click="scrollToHeading(item)"
-                  >
+                    ]" :style="{ paddingLeft: `${(item.level - 1) * 1}rem` }" @click="scrollToHeading(item)">
                     <span class="line-clamp-2 leading-relaxed">{{
                       item.text
-                    }}</span>
+                      }}</span>
                   </button>
                 </nav>
               </details>
             </div>
 
-            <div
-              class="prose dark:prose-invert max-w-none"
-              v-html="post.content"
-            />
+            <div class="prose prose-lg dark:prose-invert max-w-none" v-html="post.content" />
 
-            <footer
-              class="border-default text-muted mt-16 flex items-center justify-between border-t pt-8 text-xs"
-            >
-              <span>Published on Logos</span>
-              <NuxtLink
-                to="/admin"
-                class="hover:text-highlighted font-medium transition"
-              >
-                Studio →
-              </NuxtLink>
-            </footer>
+            <AppFooter class="mt-16" />
           </article>
         </div>
       </div>
