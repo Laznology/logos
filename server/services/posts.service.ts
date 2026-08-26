@@ -5,6 +5,11 @@ import { and, desc, eq, sql } from "drizzle-orm";
 
 const POST_NOT_FOUND_MSG = "Post not found";
 
+interface PostFilters {
+  status?: "draft" | "published";
+  authorId?: string;
+}
+
 const getAuthCondition = (user: AuthUser) => {
   if (user.role === "admin" || user.role === "editor") {
     return undefined;
@@ -12,12 +17,25 @@ const getAuthCondition = (user: AuthUser) => {
   return eq(postTable.userId, user.id);
 };
 
+const getFilterCondition = ({ status, authorId }: PostFilters) => {
+  let statusCondition: SQL<unknown> | undefined;
+  if (status === "published") {
+    statusCondition = sql`json_extract(${postTable.metadata}, '$.status') = 'published'`;
+  } else if (status === "draft") {
+    statusCondition = sql`coalesce(json_extract(${postTable.metadata}, '$.status'), 'draft') != 'published'`;
+  }
+  return and(
+    authorId ? eq(postTable.userId, authorId) : undefined,
+    statusCondition
+  );
+};
+
 class PostService {
   private readonly database: typeof db;
   constructor(database: typeof db) {
     this.database = database;
   }
-  async list(user: AuthUser) {
+  async list(user: AuthUser, filters: PostFilters = {}) {
     return await this.database
       .select({
         id: postTable.id,
@@ -35,7 +53,7 @@ class PostService {
       })
       .from(postTable)
       .leftJoin(userTable, eq(userTable.id, postTable.userId))
-      .where(getAuthCondition(user))
+      .where(and(getAuthCondition(user), getFilterCondition(filters)))
       .orderBy(desc(postTable.createdAt));
   }
 
@@ -74,7 +92,7 @@ class PostService {
     return post;
   }
 
-  async search(user: AuthUser, query: string) {
+  async search(user: AuthUser, query: string, filters: PostFilters = {}) {
     return await this.database
       .select({
         id: postTable.id,
@@ -83,6 +101,7 @@ class PostService {
         metadata: postTable.metadata,
         createdAt: postTable.createdAt,
         author: {
+          id: userTable.id,
           name: userTable.name,
           avatar: userTable.avatar,
         },
@@ -92,8 +111,9 @@ class PostService {
       .where(
         and(
           getAuthCondition(user),
+          getFilterCondition(filters),
           sql`${postTable.id} IN (
-            SELECT rowid FROM posts_fts
+            SELECT id FROM posts_fts
             WHERE posts_fts MATCH ${query}
             ORDER BY rank
           )`

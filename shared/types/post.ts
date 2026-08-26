@@ -25,6 +25,7 @@ export const postListItemSchema = v.intersect([
   v.omit(selectPostSchema, ["content"]),
   v.object({
     author: v.object({
+      id: v.nullable(v.string()),
       name: v.nullable(v.string()),
       avatar: v.nullable(v.string()),
     }),

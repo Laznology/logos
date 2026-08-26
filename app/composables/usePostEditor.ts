@@ -23,6 +23,7 @@ export const usePostEditor = () => {
   });
 
   const { $csrfFetch } = useNuxtApp();
+  const requestFetch = useRequestFetch();
 
   const {
     data: postData,
@@ -30,22 +31,18 @@ export const usePostEditor = () => {
     pending,
   } = useAsyncData<PostApiResponse>(
     `admin-post-editor-${slug.value}`,
-    () => $csrfFetch(`/api/posts/${slug.value}`),
+    () => requestFetch<PostApiResponse>(`/api/posts/${slug.value}`),
     {
       immediate: !isNew.value,
       watch: [slug],
     }
   );
 
-  watch(
-    postData,
-    (newData) => {
-      if (newData?.data) {
-        post.value = { ...newData.data };
-      }
-    },
-    { immediate: true }
-  );
+  watchEffect(() => {
+    if (postData.value?.data) {
+      post.value = { ...postData.value.data };
+    }
+  });
 
   const performAutoSave = useDebounceFn(async () => {
     if (!post.value) {
@@ -74,6 +71,9 @@ export const usePostEditor = () => {
           ) {
             useRouter().replace(`/admin/posts/${response.data.slug}`);
           }
+          refreshNuxtData("admin-sidebar-posts");
+          refreshNuxtData("admin-posts-list-page");
+          refreshNuxtData("admin-command-palette-posts");
         }
       } else {
         const response = await $csrfFetch<PostApiResponse>(
@@ -98,6 +98,9 @@ export const usePostEditor = () => {
             post.value.slug = response.data.slug;
             useRouter().replace(`/admin/posts/${response.data.slug}`);
           }
+          refreshNuxtData("admin-sidebar-posts");
+          refreshNuxtData("admin-posts-list-page");
+          refreshNuxtData("admin-command-palette-posts");
         }
       }
       savingStatus.value = "saved";

@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import type {
-  BreadcrumbItem,
-  CommandPaletteGroup,
-  NavigationMenuItem,
-} from "@nuxt/ui";
+import type { BreadcrumbItem, NavigationMenuItem } from "@nuxt/ui";
 
 const FILE_ICON = "i-lucide-file-text";
 const ADMIN_POSTS_PATH = "/admin";
@@ -14,18 +10,6 @@ const colorMode = useColorMode();
 const toggleTheme = () => {
   colorMode.preference = colorMode.value === "dark" ? "light" : "dark";
 };
-const searchQuery = ref("");
-const deboundeQuery = refDebounced(searchQuery, 300);
-const {
-  data: searchResult,
-  error,
-  pending: isSearching,
-} = useCsrfFetch<PostSearchListType>("/api/posts", {
-  key: "admin-global-search-posts",
-  query: { q: deboundeQuery },
-  immediate: false,
-  watch: [deboundeQuery],
-});
 
 const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
   const segments = route.path.split("/").filter(Boolean);
@@ -48,28 +32,11 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
   });
 });
 
-const commandGroups = computed<CommandPaletteGroup[]>(() => [
-  {
-    id: "posts",
-    label: "Posts",
-    items: (searchResult.value || []).map((post) => ({
-      id: post.id,
-      label: post.title,
-      suffix: `/${post.slug}`,
-      icon: FILE_ICON,
-      avatar: post.author.avatar ? { src: post.author.avatar } : undefined,
-      onSelect: () => {
-        isCommandPaletteOpen.value = false;
-        navigateTo(`/admin/posts/${post.slug}`);
-      },
-    })),
-  },
-]);
 const isCollapsed = useCookie<boolean>("admin_sidebar_collapsed", {
   default: () => false,
 });
 
-const { data: sidebarPosts } = useCsrfFetch<PostListType>("/api/posts", {
+const { data: sidebarPosts } = await useFetch<PostListType>("/api/posts", {
   key: "admin-sidebar-posts",
   default: () => [],
 });
@@ -101,18 +68,10 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
 </script>
 
 <template>
-  <UDashboardGroup
-    class="bg-default text-default h-screen w-screen overflow-hidden"
-  >
-    <UDashboardSidebar
-      v-model:collapsed="isCollapsed"
-      collapsible
-      :collapsed-size="0"
-      side="left"
-      :ui="{
-        root: 'transition-[width] duration-300 ease-in-out motion-reduce:transition-none data-[collapsed=true]:!w-0 data-[collapsed=true]:!min-w-0 data-[collapsed=true]:!border-none data-[collapsed=true]:overflow-hidden',
-      }"
-    >
+  <UDashboardGroup class="bg-default text-default h-screen w-screen overflow-hidden">
+    <UDashboardSidebar v-model:collapsed="isCollapsed" collapsible :collapsed-size="0" side="left" :ui="{
+      root: 'transition-[width] duration-300 ease-in-out motion-reduce:transition-none data-[collapsed=true]:!w-0 data-[collapsed=true]:!min-w-0 data-[collapsed=true]:!border-none data-[collapsed=true]:overflow-hidden',
+    }">
       <template #header="{ collapsed }">
         <div class="flex w-full items-center justify-between">
           <div class="flex items-center gap-2">
@@ -121,24 +80,13 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
               Logos
             </span>
           </div>
-          <UButton
-            v-if="!collapsed"
-            icon="i-lucide-panel-left-close"
-            variant="ghost"
-            color="neutral"
-            size="sm"
-            aria-label="Collapse sidebar"
-            @click="isCollapsed = true"
-          />
+          <UButton v-if="!collapsed" icon="i-lucide-panel-left-close" variant="ghost" color="neutral" size="sm"
+            aria-label="Collapse sidebar" @click="isCollapsed = true" />
         </div>
       </template>
 
       <template #default="{ collapsed }">
-        <UNavigationMenu
-          orientation="vertical"
-          :collapsed="collapsed"
-          :items="navItems"
-        >
+        <UNavigationMenu orientation="vertical" :collapsed="collapsed" :items="navItems">
           <template #search-trailing>
             <UKbd value="meta" size="sm" />
             <UKbd value="K" size="sm" />
@@ -148,22 +96,11 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
 
       <template #footer="{ collapsed }">
         <div class="flex w-full items-center justify-between">
-          <div
-            v-if="!collapsed"
-            class="text-muted flex items-center gap-2 text-xs"
-          >
+          <div v-if="!collapsed" class="text-muted flex items-center gap-2 text-xs">
             <span>Logos Studio</span>
           </div>
-          <UButton
-            variant="ghost"
-            color="neutral"
-            size="sm"
-            :icon="
-              colorMode.value === 'dark' ? 'i-lucide-moon' : 'i-lucide-sun'
-            "
-            aria-label="Toggle theme"
-            @click="toggleTheme"
-          />
+          <UButton variant="ghost" color="neutral" size="sm" :icon="colorMode.value === 'dark' ? 'i-lucide-moon' : 'i-lucide-sun'
+            " aria-label="Toggle theme" @click="toggleTheme" />
         </div>
       </template>
     </UDashboardSidebar>
@@ -172,15 +109,8 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
       <UDashboardNavbar>
         <template #leading>
           <div class="flex items-center gap-2">
-            <UButton
-              v-if="isCollapsed"
-              icon="i-lucide-panel-left"
-              variant="ghost"
-              color="neutral"
-              size="sm"
-              aria-label="Expand sidebar"
-              @click="isCollapsed = false"
-            />
+            <UButton v-if="isCollapsed" icon="i-lucide-panel-left" variant="ghost" color="neutral" size="sm"
+              aria-label="Expand sidebar" @click="isCollapsed = false" />
             <UBreadcrumb :items="breadcrumbItems" class="text-sm" />
           </div>
         </template>
@@ -195,12 +125,6 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
       </main>
     </UDashboardPanel>
 
-    <UDashboardSearch
-      v-model:open="isCommandPaletteOpen"
-      v-model:search-term="searchQuery"
-      :groups="commandGroups"
-      :loading="isSearching"
-      placeholder="Search posts..."
-    />
+    <AdminPostCommandPalette v-model:open="isCommandPaletteOpen" />
   </UDashboardGroup>
 </template>
