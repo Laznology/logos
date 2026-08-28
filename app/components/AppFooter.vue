@@ -7,20 +7,20 @@
     <span class="text-muted flex items-center gap-2 text-xs">
       <span>
         Made with
-        <a 
-        href="https://github.com/Laznology/logos"
-        target="_blank"
-        rel="noopener"
-        class="hover:text-highlighted font-medium text-primary transition"
+        <a
+          href="https://github.com/Laznology/logos"
+          target="_blank"
+          rel="noopener"
+          class="hover:text-highlighted text-primary font-medium transition"
         >
           Logos
         </a>
-         by
+        by
         <a
           href="https://github.com/Laznology"
           target="_blank"
           rel="noopener"
-          class="hover:text-highlighted font-medium text-primary transition"
+          class="hover:text-highlighted text-primary font-medium transition"
         >
           Laznology
         </a>

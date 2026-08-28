@@ -1,4 +1,4 @@
-@import "tailwindcss" theme(static);
+@import "tailwindcss";
 @import "@nuxt/ui";
 @plugin "@tailwindcss/typography";
 
@@ -15,6 +15,30 @@
   --ui-bg-muted: #202020;
   --ui-bg-elevated: #262626;
   --ui-bg-accented: #2f2f2f;
+}
+
+.themed-scrollbar {
+  scrollbar-color: var(--ui-bg-accented) var(--ui-bg-muted);
+  scrollbar-width: thin;
+}
+
+.themed-scrollbar::-webkit-scrollbar {
+  width: 0.5rem;
+}
+
+.themed-scrollbar::-webkit-scrollbar-track {
+  background: var(--ui-bg-muted);
+  border-radius: 9999px;
+}
+
+.themed-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--ui-bg-accented);
+  border: 2px solid var(--ui-bg-muted);
+  border-radius: 9999px;
+}
+
+.themed-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--ui-text-muted);
 }
 
 html.dark .tiptap .shiki,

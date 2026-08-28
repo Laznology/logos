@@ -29,7 +29,6 @@ const { data: posts, pending } = await useFetch("/api/public/posts", {
   transform: (response: ApiResponse) => response.data || [],
 });
 
-
 useSeoMeta({
   title: "Logos — Minimal Editorial Blog",
   description:

@@ -118,7 +118,6 @@ export function useEditorCompletion(
       storage.setSuggestion(suggestionText);
       editor.view.dispatch(editor.state.tr.setMeta("completionUpdate", true));
     } else if (insertState.value) {
-
       const transformModes = [
         "fix",
         "extend",

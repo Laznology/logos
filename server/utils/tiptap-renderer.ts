@@ -74,24 +74,24 @@ const ImageUploadExtension = Node.create({
 const rendererExtensions: Extensions = [
   StarterKit.configure({
     heading: false,
-  }) as unknown as Extensions[number],
+  }),
   CustomHeading.configure({
     levels: [1, 2, 3, 4],
-  }) as unknown as Extensions[number],
-  TableKit as unknown as Extensions[number],
-  TaskList as unknown as Extensions[number],
+  }),
+  TableKit,
+  TaskList,
   TaskItem.configure({
     nested: true,
-  }) as unknown as Extensions[number],
+  }),
   Image.configure({
     HTMLAttributes: {
       class: "rounded-lg max-w-full h-auto my-4",
     },
-  }) as unknown as Extensions[number],
-  ImageUploadExtension as unknown as Extensions[number],
-  Highlight.configure({ multicolor: true }) as unknown as Extensions[number],
-  TextStyle as unknown as Extensions[number],
-  Color as unknown as Extensions[number],
+  }),
+  ImageUploadExtension,
+  Highlight.configure({ multicolor: true }),
+  TextStyle,
+  Color,
 ];
 
 function getNodeText(node: JSONContent): string {
@@ -242,8 +242,9 @@ export function extractHeadingsAndHTML(rawContent: unknown): RenderResult {
     name: "highlight",
     level: "inline" as const,
     start(src: string) {
-      return src.match(/==/)?.index;
+      return src.match(/[=]=/)?.index;
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tokenizer(this: any, src: string) {
       const rule = /^==([^=]+)==/;
       const match = rule.exec(src);
@@ -258,6 +259,7 @@ export function extractHeadingsAndHTML(rawContent: unknown): RenderResult {
         return token;
       }
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     renderer(this: any, token: any) {
       return `<mark>${this.parser.parseInline(token.tokens)}</mark>`;
     },
@@ -269,6 +271,7 @@ export function extractHeadingsAndHTML(rawContent: unknown): RenderResult {
     start(src: string) {
       return src.match(/\+\+/)?.index;
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tokenizer(this: any, src: string) {
       const rule = /^\+\+([^\n]+?)\+\+/;
       const match = rule.exec(src);
@@ -283,6 +286,7 @@ export function extractHeadingsAndHTML(rawContent: unknown): RenderResult {
         return token;
       }
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     renderer(this: any, token: any) {
       return `<u>${this.parser.parseInline(token.tokens)}</u>`;
     },
@@ -291,6 +295,7 @@ export function extractHeadingsAndHTML(rawContent: unknown): RenderResult {
   marked.use({ extensions: [highlightExtension, underlineExtension] });
   marked.use({
     renderer: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       heading(this: any, token: any) {
         const depth = token.depth;
         const text = token.text;
