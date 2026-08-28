@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CommandPaletteGroup } from "@nuxt/ui";
+
 import {
   filterPalettePosts,
   groupPostsByDate,
@@ -30,17 +31,26 @@ const previewHtml = ref("");
 const previewError = ref("");
 const previewPending = ref(false);
 let previewController: AbortController | undefined;
-const statusSelect = useTemplateRef<{ triggerRef?: HTMLElement }>("statusSelect");
-const authorSelect = useTemplateRef<{ triggerRef?: HTMLElement }>("authorSelect");
+const statusSelect = useTemplateRef<{ triggerRef?: HTMLElement }>(
+  "statusSelect"
+);
+const authorSelect = useTemplateRef<{ triggerRef?: HTMLElement }>(
+  "authorSelect"
+);
 
 watch(open, async (isOpen) => {
   if (!isOpen) {
     return;
   }
   await nextTick();
-  // ponytail: Nuxt UI 4.10 overwrites trigger aria-label with "Show popup".
-  statusSelect.value?.triggerRef?.setAttribute("aria-label", "Filter by status");
-  authorSelect.value?.triggerRef?.setAttribute("aria-label", "Filter by author");
+  statusSelect.value?.triggerRef?.setAttribute(
+    "aria-label",
+    "Filter by status"
+  );
+  authorSelect.value?.triggerRef?.setAttribute(
+    "aria-label",
+    "Filter by author"
+  );
 });
 
 const statusOptions = [
@@ -70,18 +80,20 @@ const {
   data: searchResults,
   error: searchError,
   pending: searchPending,
-  refresh: search,
-} = useFetch<PostSearchListType>("/api/posts", {
-  key: "admin-command-palette-search",
-  query: searchParams,
-  immediate: false,
-});
-
-watch(searchParams, () => {
-  if (searchEnabled.value) {
-    search();
+} = useAsyncData<PostSearchListType>(
+  "admin-command-palette-search",
+  () => {
+    if (!searchEnabled.value) {
+      return Promise.resolve([]);
+    }
+    return $fetch("/api/posts", {
+      query: searchParams.value,
+    });
+  },
+  {
+    watch: [searchParams],
   }
-});
+);
 
 const authorOptions = computed(() => {
   const authors = new Map<string, string>();
@@ -194,10 +206,11 @@ async function loadPreview(post: PalettePost) {
   previewController = controller;
 
   try {
-    const response = await $fetch<PreviewResponse>(
-      `/api/posts/${post.slug}`,
-      { query: { preview: 1 }, signal: controller.signal }
-    );
+    const doFetch = $fetch;
+    const response = await doFetch<PreviewResponse>(`/api/posts/${post.slug}`, {
+      query: { preview: 1 },
+      signal: controller.signal,
+    });
     if (previewController === controller) {
       previewHtml.value = response.previewHtml || "";
     }
@@ -242,36 +255,83 @@ defineShortcuts({
 </script>
 
 <template>
-  <UModal v-model:open="open" title="Search posts" description="Find and open a post"
-    :ui="{ content: showPreview ? 'sm:max-w-5xl' : 'sm:max-w-2xl' }">
+  <UModal
+    v-model:open="open"
+    title="Search posts"
+    description="Find and open a post"
+    :ui="{ content: showPreview ? 'sm:max-w-5xl' : 'sm:max-w-2xl' }"
+  >
     <template #content>
       <div class="flex h-[min(78vh,44rem)] min-h-0 flex-col overflow-hidden">
         <h2 class="sr-only">Search posts</h2>
         <div class="border-muted flex flex-wrap gap-2 border-b p-2">
-          <UButton :label="titleOnly ? 'Title only' : 'All text'" icon="i-lucide-type" color="neutral" size="sm"
-            :variant="titleOnly ? 'soft' : 'ghost'" @click="titleOnly = !titleOnly" />
-          <USelectMenu ref="statusSelect" v-model="status" :items="statusOptions" value-key="value"
-            :search-input="false" size="sm" class="w-36" />
-          <USelectMenu ref="authorSelect" v-model="authorId" :items="authorOptions" value-key="value"
-            placeholder="All authors" size="sm" class="w-40" />
-          <UButton :icon="showPreview ? 'i-lucide-panel-right-close' : 'i-lucide-panel-right'
-            " color="neutral" variant="ghost" size="sm" class="ml-auto hidden md:inline-flex"
-            :aria-label="showPreview ? 'Hide preview' : 'Show preview'" @click="showPreview = !showPreview" />
+          <UButton
+            :label="titleOnly ? 'Title only' : 'All text'"
+            icon="i-lucide-type"
+            color="neutral"
+            size="sm"
+            :variant="titleOnly ? 'soft' : 'ghost'"
+            @click="titleOnly = !titleOnly"
+          />
+          <USelectMenu
+            ref="statusSelect"
+            v-model="status"
+            :items="statusOptions"
+            value-key="value"
+            :search-input="false"
+            size="sm"
+            class="w-36"
+          />
+          <USelectMenu
+            ref="authorSelect"
+            v-model="authorId"
+            :items="authorOptions"
+            value-key="value"
+            placeholder="All authors"
+            size="sm"
+            class="w-40"
+          />
+          <UButton
+            :icon="
+              showPreview
+                ? 'i-lucide-panel-right-close'
+                : 'i-lucide-panel-right'
+            "
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            class="ml-auto hidden md:inline-flex"
+            :aria-label="showPreview ? 'Hide preview' : 'Show preview'"
+            @click="showPreview = !showPreview"
+          />
         </div>
 
-        <div class="grid min-h-0 flex-1" :class="showPreview
-            ? 'md:grid-cols-[minmax(0,1fr)_minmax(18rem,0.85fr)]'
-            : 'grid-cols-1'
-          ">
-          <UCommandPalette v-model:search-term="searchQuery" :groups="groups" :loading="pending" close
-            placeholder="Search posts..." class="min-h-0" :ui="{
+        <div
+          class="grid min-h-0 flex-1"
+          :class="
+            showPreview
+              ? 'md:grid-cols-[minmax(0,1fr)_minmax(18rem,0.85fr)]'
+              : 'grid-cols-1'
+          "
+        >
+          <UCommandPalette
+            v-model:search-term="searchQuery"
+            :groups="groups"
+            :loading="pending"
+            close
+            placeholder="Search posts..."
+            class="min-h-0"
+            :ui="{
               root: 'h-full',
               viewport: 'max-h-none',
               item: 'data-highlighted:before:!bg-primary/15',
               itemLeadingIcon: 'group-data-highlighted:text-primary',
               itemLabel: 'group-data-highlighted:text-primary',
               itemLabelBase: '[&>mark]:bg-primary/20 [&>mark]:text-primary',
-            }" @update:open="open = $event" @highlight="onHighlight">
+            }"
+            @update:open="open = $event"
+            @highlight="onHighlight"
+          >
             <template v-if="error" #empty>
               <div class="text-error p-6 text-center text-sm">
                 Search failed. Try again.
@@ -279,15 +339,26 @@ defineShortcuts({
             </template>
           </UCommandPalette>
 
-          <aside v-if="showPreview" class="border-muted bg-elevated hidden min-h-0 flex-col border-l md:flex">
+          <aside
+            v-if="showPreview"
+            class="border-muted bg-elevated hidden min-h-0 flex-col border-l md:flex"
+          >
             <div v-if="previewPending" class="space-y-4 p-6">
               <USkeleton class="h-7 w-2/3" />
               <USkeleton class="h-4 w-1/3" />
               <USkeleton class="h-32 w-full" />
             </div>
-            <UEmpty v-else-if="previewError" icon="i-lucide-circle-alert" title="Preview unavailable"
-              :description="previewError" class="m-auto" />
-            <article v-else-if="selectedPost" class="flex min-h-0 flex-1 flex-col p-6">
+            <UEmpty
+              v-else-if="previewError"
+              icon="i-lucide-circle-alert"
+              title="Preview unavailable"
+              :description="previewError"
+              class="m-auto"
+            />
+            <article
+              v-else-if="selectedPost"
+              class="flex min-h-0 flex-1 flex-col p-6"
+            >
               <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
                   <h3 class="text-highlighted truncate text-xl font-semibold">
@@ -298,21 +369,46 @@ defineShortcuts({
                   </p>
                 </div>
                 <div class="flex shrink-0 gap-1">
-                  <UButton label="Copy link" icon="i-lucide-link" color="neutral" variant="ghost" size="xs"
-                    @click="copySelectedLink" />
-                  <UButton label="Open" icon="i-lucide-arrow-up-right" color="neutral" variant="ghost" size="xs"
-                    :to="selectedHref" target="_blank" rel="noopener noreferrer" />
+                  <UButton
+                    label="Copy link"
+                    icon="i-lucide-link"
+                    color="neutral"
+                    variant="ghost"
+                    size="xs"
+                    @click="copySelectedLink"
+                  />
+                  <UButton
+                    label="Open"
+                    icon="i-lucide-arrow-up-right"
+                    color="neutral"
+                    variant="ghost"
+                    size="xs"
+                    :to="selectedHref"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  />
                 </div>
               </div>
-              <iframe :srcdoc="previewDocument" sandbox="" title="Post preview"
-                class="border-muted bg-elevated mt-6 min-h-0 flex-1 rounded-md border" />
+              <iframe
+                :srcdoc="previewDocument"
+                sandbox=""
+                title="Post preview"
+                class="border-muted bg-elevated mt-6 min-h-0 flex-1 rounded-md border"
+              />
             </article>
-            <UEmpty v-else icon="i-lucide-panel-right" title="Select a post"
-              description="Use arrow keys or hover to preview." class="m-auto" />
+            <UEmpty
+              v-else
+              icon="i-lucide-panel-right"
+              title="Select a post"
+              description="Use arrow keys or hover to preview."
+              class="m-auto"
+            />
           </aside>
         </div>
 
-        <div class="border-muted text-muted flex items-center gap-4 border-t px-3 py-2 text-xs">
+        <div
+          class="border-muted text-muted flex items-center gap-4 border-t px-3 py-2 text-xs"
+        >
           <span class="flex items-center gap-1">
             <UKbd value="meta" size="sm" />
             <UKbd value="K" size="sm" />

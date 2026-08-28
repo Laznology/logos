@@ -5,6 +5,7 @@ const FILE_ICON = "i-lucide-file-text";
 const ADMIN_POSTS_PATH = "/admin";
 const route = useRoute();
 const isCommandPaletteOpen = ref(false);
+const isSettingsOpen = ref(false);
 
 const colorMode = useColorMode();
 const toggleTheme = () => {
@@ -68,10 +69,18 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
 </script>
 
 <template>
-  <UDashboardGroup class="bg-default text-default h-screen w-screen overflow-hidden">
-    <UDashboardSidebar v-model:collapsed="isCollapsed" collapsible :collapsed-size="0" side="left" :ui="{
-      root: 'transition-[width] duration-300 ease-in-out motion-reduce:transition-none data-[collapsed=true]:!w-0 data-[collapsed=true]:!min-w-0 data-[collapsed=true]:!border-none data-[collapsed=true]:overflow-hidden',
-    }">
+  <UDashboardGroup
+    class="bg-default text-default h-screen w-screen overflow-hidden"
+  >
+    <UDashboardSidebar
+      v-model:collapsed="isCollapsed"
+      collapsible
+      :collapsed-size="0"
+      side="left"
+      :ui="{
+        root: 'transition-[width] duration-300 ease-in-out motion-reduce:transition-none data-[collapsed=true]:!w-0 data-[collapsed=true]:!min-w-0 data-[collapsed=true]:!border-none data-[collapsed=true]:overflow-hidden',
+      }"
+    >
       <template #header="{ collapsed }">
         <div class="flex w-full items-center justify-between">
           <div class="flex items-center gap-2">
@@ -80,13 +89,24 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
               Logos
             </span>
           </div>
-          <UButton v-if="!collapsed" icon="i-lucide-panel-left-close" variant="ghost" color="neutral" size="sm"
-            aria-label="Collapse sidebar" @click="isCollapsed = true" />
+          <UButton
+            v-if="!collapsed"
+            icon="i-lucide-panel-left-close"
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            aria-label="Collapse sidebar"
+            @click="isCollapsed = true"
+          />
         </div>
       </template>
 
       <template #default="{ collapsed }">
-        <UNavigationMenu orientation="vertical" :collapsed="collapsed" :items="navItems">
+        <UNavigationMenu
+          orientation="vertical"
+          :collapsed="collapsed"
+          :items="navItems"
+        >
           <template #search-trailing>
             <UKbd value="meta" size="sm" />
             <UKbd value="K" size="sm" />
@@ -96,11 +116,32 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
 
       <template #footer="{ collapsed }">
         <div class="flex w-full items-center justify-between">
-          <div v-if="!collapsed" class="text-muted flex items-center gap-2 text-xs">
+          <div
+            v-if="!collapsed"
+            class="text-muted flex items-center gap-2 text-xs"
+          >
             <span>Logos Studio</span>
           </div>
-          <UButton variant="ghost" color="neutral" size="sm" :icon="colorMode.value === 'dark' ? 'i-lucide-moon' : 'i-lucide-sun'
-            " aria-label="Toggle theme" @click="toggleTheme" />
+          <div class="flex items-center gap-1">
+            <UButton
+              variant="ghost"
+              color="neutral"
+              size="sm"
+              icon="i-lucide-settings"
+              aria-label="Account settings"
+              @click="isSettingsOpen = true"
+            />
+            <UButton
+              variant="ghost"
+              color="neutral"
+              size="sm"
+              :icon="
+                colorMode.value === 'dark' ? 'i-lucide-moon' : 'i-lucide-sun'
+              "
+              aria-label="Toggle theme"
+              @click="toggleTheme"
+            />
+          </div>
         </div>
       </template>
     </UDashboardSidebar>
@@ -108,10 +149,25 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
     <UDashboardPanel class="relative min-h-0 flex-1 overflow-hidden">
       <UDashboardNavbar>
         <template #leading>
-          <div class="flex items-center gap-2">
-            <UButton v-if="isCollapsed" icon="i-lucide-panel-left" variant="ghost" color="neutral" size="sm"
-              aria-label="Expand sidebar" @click="isCollapsed = false" />
-            <UBreadcrumb :items="breadcrumbItems" class="text-sm" />
+          <div class="flex min-w-0 flex-1 items-center gap-2">
+            <UButton
+              v-if="isCollapsed"
+              icon="i-lucide-panel-left"
+              variant="ghost"
+              color="neutral"
+              size="sm"
+              aria-label="Expand sidebar"
+              @click="isCollapsed = false"
+            />
+            <UBreadcrumb
+              :items="breadcrumbItems"
+              :ui="{ list: 'min-w-0' }"
+              class="max-w-full min-w-0 text-sm"
+            >
+              <template #separator>
+                <span class="text-muted px-1">/</span>
+              </template>
+            </UBreadcrumb>
           </div>
         </template>
 
@@ -126,5 +182,6 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
     </UDashboardPanel>
 
     <AdminPostCommandPalette v-model:open="isCommandPaletteOpen" />
+    <AdminAccountSettings v-model:open="isSettingsOpen" />
   </UDashboardGroup>
 </template>

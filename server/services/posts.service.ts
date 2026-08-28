@@ -1,7 +1,7 @@
-import { db } from "hub:db";
-import { postTable, userTable } from "hub:db:schema";
 import type { SQL } from "drizzle-orm";
 import { and, desc, eq, sql } from "drizzle-orm";
+import { db } from "hub:db";
+import { postTable, userTable } from "hub:db:schema";
 
 const POST_NOT_FOUND_MSG = "Post not found";
 
@@ -29,6 +29,25 @@ const getFilterCondition = ({ status, authorId }: PostFilters) => {
     statusCondition
   );
 };
+const toAvatarUrl = (avatar: string | null) =>
+  avatar ? `/images/${avatar}` : null;
+
+const withAuthorAvatarUrl = <
+  T extends { author: { avatar: string | null } | null },
+>(
+  post: T
+): T => {
+  if (!post.author) {
+    return post;
+  }
+  return {
+    ...post,
+    author: {
+      ...post.author,
+      avatar: toAvatarUrl(post.author.avatar),
+    },
+  } as T;
+};
 
 class PostService {
   private readonly database: typeof db;
@@ -36,7 +55,7 @@ class PostService {
     this.database = database;
   }
   async list(user: AuthUser, filters: PostFilters = {}) {
-    return await this.database
+    const posts = await this.database
       .select({
         id: postTable.id,
         title: postTable.title,
@@ -55,10 +74,11 @@ class PostService {
       .leftJoin(userTable, eq(userTable.id, postTable.userId))
       .where(and(getAuthCondition(user), getFilterCondition(filters)))
       .orderBy(desc(postTable.createdAt));
+    return posts.map(withAuthorAvatarUrl);
   }
 
   private async _getPostBase(condition: SQL<unknown> | undefined) {
-    return await this.database
+    const posts = await this.database
       .select({
         id: postTable.id,
         title: postTable.title,
@@ -76,6 +96,7 @@ class PostService {
       .leftJoin(userTable, eq(userTable.id, postTable.userId))
       .where(condition)
       .limit(1);
+    return posts.map(withAuthorAvatarUrl);
   }
 
   async getBySlug(user: AuthUser, slug: string) {
@@ -93,7 +114,7 @@ class PostService {
   }
 
   async search(user: AuthUser, query: string, filters: PostFilters = {}) {
-    return await this.database
+    const posts = await this.database
       .select({
         id: postTable.id,
         title: postTable.title,
@@ -120,6 +141,7 @@ class PostService {
         )
       )
       .limit(20);
+    return posts.map(withAuthorAvatarUrl);
   }
 
   async getById(id: string, user: AuthUser) {
@@ -198,7 +220,7 @@ class PostService {
   }
 
   async listPublicPosts() {
-    return await this.database
+    const posts = await this.database
       .select({
         id: postTable.id,
         title: postTable.title,
@@ -216,6 +238,7 @@ class PostService {
       .leftJoin(userTable, eq(userTable.id, postTable.userId))
       .where(sql`json_extract(${postTable.metadata}, '$.status') = 'published'`)
       .orderBy(desc(postTable.createdAt));
+    return posts.map(withAuthorAvatarUrl);
   }
 
   async getPublicPostBySlug(slug: string) {
@@ -253,7 +276,7 @@ class PostService {
       });
     }
 
-    return post;
+    return withAuthorAvatarUrl(post);
   }
 }
 

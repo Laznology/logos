@@ -31,10 +31,7 @@ export function filterPalettePosts<T extends PalettePost>(
 
   return posts
     .filter((post) => {
-      if (
-        filters.status !== "all" &&
-        postStatus(post) !== filters.status
-      ) {
+      if (filters.status !== "all" && postStatus(post) !== filters.status) {
         return false;
       }
       if (filters.authorId && post.author.id !== filters.authorId) {

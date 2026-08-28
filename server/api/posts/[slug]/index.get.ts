@@ -1,8 +1,8 @@
-import { extractHeadingsAndHTML } from "~~/server/utils/tiptap-renderer";
 import { postService } from "~~/server/services/posts.service";
+import { extractHeadingsAndHTML } from "~~/server/utils/tiptap-renderer";
 
 export default defineProtectedHandler(async (event) => {
-  const { user } = await requireUserSession(event);
+  const { user } = await requireValidSession(event);
   const slug = getRouterParam(event, "slug");
   if (!slug) {
     throw createError({

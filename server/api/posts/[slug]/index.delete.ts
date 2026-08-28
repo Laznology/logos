@@ -1,7 +1,7 @@
 import { postService } from "~~/server/services/posts.service";
 
 export default defineProtectedHandler(async (event) => {
-  const { user } = await requireUserSession(event);
+  const { user } = await requireValidSession(event);
   const slug = getRouterParam(event, "slug");
   if (!slug) {
     throw createError({
