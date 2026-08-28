@@ -24,6 +24,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  await createSession(event, user.id);
   await setUserSession(event, {
     user: {
       id: user.id,

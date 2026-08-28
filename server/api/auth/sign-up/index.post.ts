@@ -1,5 +1,5 @@
-import { userTable } from "hub:db:schema";
 import { or, eq } from "drizzle-orm";
+import { userTable } from "hub:db:schema";
 import * as v from "valibot";
 
 export default defineEventHandler(async (event) => {
@@ -43,6 +43,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  await createSession(event, newUser.id);
   await setUserSession(event, {
     user: {
       id: newUser.id,

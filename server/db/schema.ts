@@ -61,3 +61,29 @@ export const postTable = sqliteTable(
     index("idx_post_updated_at").on(table.updatedAt),
   ]
 );
+
+export const sessionTable = sqliteTable(
+  "sessions",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull().unique(),
+    userAgent: text("user_agent"),
+    ipAddress: text("ip_address"),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    lastActivity: integer("last_activity", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    index("idx_session_user_id").on(table.userId),
+    index("idx_session_expires_at").on(table.expiresAt),
+  ]
+);

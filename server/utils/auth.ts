@@ -1,4 +1,6 @@
-import type { Role } from "../db/schema";
+import type { Role } from "@nuxthub/db/schema";
+
+import { requireValidSession } from "./session";
 
 export function defineProtectedHandler<T extends EventHandlerRequest, D>(
   handler: EventHandler<T, D>,
@@ -7,12 +9,9 @@ export function defineProtectedHandler<T extends EventHandlerRequest, D>(
   return defineEventHandler<T>({
     onRequest: [
       async (event) => {
-        const session = await requireUserSession(event);
-        if (roles && roles.length > 0 && !roles.includes(session.user.role)) {
-          throw createError({
-            statusCode: 403,
-            statusMessage: "Forbidden",
-          });
+        const { user } = await requireValidSession(event);
+        if (roles && roles.length > 0 && !roles.includes(user.role)) {
+          throw createError({ statusCode: 403, statusMessage: "Forbidden" });
         }
       },
     ],
