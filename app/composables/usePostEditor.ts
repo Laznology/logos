@@ -76,6 +76,8 @@ export const usePostEditor = () => {
           refreshNuxtData("admin-command-palette-posts");
         }
       } else {
+        const previousTitle = postData.value?.data.title;
+        const previousSlug = postData.value?.data.slug;
         const response = await $csrfFetch<PostApiResponse>(
           `/api/posts/${slug.value}`,
           {
@@ -87,6 +89,10 @@ export const usePostEditor = () => {
           }
         );
         if (response?.data) {
+          const listsNeedRefresh =
+            response.data.title !== previousTitle ||
+            response.data.slug !== previousSlug;
+          postData.value = response;
           post.value.id = response.data.id;
           post.value.metadata = response.data.metadata;
           post.value.updatedAt = response.data.updatedAt;
@@ -98,9 +104,11 @@ export const usePostEditor = () => {
             post.value.slug = response.data.slug;
             useRouter().replace(`/admin/posts/${response.data.slug}`);
           }
-          refreshNuxtData("admin-sidebar-posts");
-          refreshNuxtData("admin-posts-list-page");
-          refreshNuxtData("admin-command-palette-posts");
+          if (listsNeedRefresh) {
+            refreshNuxtData("admin-sidebar-posts");
+            refreshNuxtData("admin-posts-list-page");
+            refreshNuxtData("admin-command-palette-posts");
+          }
         }
       }
       savingStatus.value = "saved";
