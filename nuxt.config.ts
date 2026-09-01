@@ -20,6 +20,7 @@ export default defineNuxtConfig({
     "nuxt-csurf",
     "@vueuse/nuxt",
     "nuxt-auth-utils",
+    "@nuxt/test-utils",
   ],
 
   ui: {
