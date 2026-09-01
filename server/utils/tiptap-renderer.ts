@@ -25,6 +25,12 @@ export interface RenderResult {
   markdown: string;
 }
 
+interface PostLinkToken {
+  type: "postLink";
+  raw: string;
+  slug: string;
+}
+
 const CustomHeading = Heading.extend({
   addAttributes() {
     return {
@@ -265,6 +271,29 @@ export function extractHeadingsAndHTML(rawContent: unknown): RenderResult {
     },
   };
 
+  const postLinkExtension = {
+    name: "postLink",
+    level: "inline" as const,
+    start(src: string) {
+      return src.match(/\[\[[a-z0-9]+(?:-[a-z0-9]+)*\]\]/i)?.index;
+    },
+    tokenizer(this: unknown, src: string): PostLinkToken | undefined {
+      const match = /^\[\[([a-z0-9]+(?:-[a-z0-9]+)*)\]\]/i.exec(src);
+      const slug = match?.[1];
+      if (!match || !slug) {
+        return;
+      }
+      return {
+        type: "postLink",
+        raw: match[0],
+        slug: slug.toLowerCase(),
+      };
+    },
+    renderer(this: unknown, token: PostLinkToken) {
+      return `<a href="/posts/${token.slug}">${token.slug}</a>`;
+    },
+  };
+
   const underlineExtension = {
     name: "underline",
     level: "inline" as const,
@@ -292,7 +321,9 @@ export function extractHeadingsAndHTML(rawContent: unknown): RenderResult {
     },
   };
 
-  marked.use({ extensions: [highlightExtension, underlineExtension] });
+  marked.use({
+    extensions: [highlightExtension, underlineExtension, postLinkExtension],
+  });
   marked.use({
     renderer: {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from "@nuxt/ui";
 
+import type { PostGraph } from "#shared/types/graph";
 import TableOfContentsView from "~/components/editor/TableOfContents.vue";
+import GraphView from "~/components/GraphView.vue";
 
 interface HeadingItem {
   id: string;
@@ -31,12 +33,18 @@ interface ApiResponse {
   data: PublicPostData;
 }
 
+interface GraphResponse {
+  success: boolean;
+  data: PostGraph;
+}
+
 const route = useRoute();
 const slug = computed(() => route.params.slug as string);
 const colorMode = useColorMode();
 const toast = useToast();
 const { copy, isSupported } = useClipboard();
 const { y } = useWindowScroll();
+const graphOpen = ref(false);
 
 const readingProgress = computed(() => {
   if (import.meta.server) {
@@ -63,6 +71,11 @@ const {
   key: `public-post-${slug.value}`,
   transform: (response: ApiResponse) => response.data,
   watch: [slug],
+});
+
+const { data: graph } = await useFetch("/api/public/graph", {
+  key: "public-post-graph",
+  transform: (response: GraphResponse) => response.data,
 });
 
 const wordCountText = computed(() => {
@@ -180,13 +193,13 @@ useSeoMeta({
     />
     <header class="bg-default/80 sticky top-0 z-30 backdrop-blur-md">
       <div
-        class="mx-auto flex h-14 max-w-6xl items-center justify-between px-6"
+        class="mx-auto flex h-14 max-w-7xl items-center justify-between px-6"
       >
-        <UBreadcrumb
-          :items="breadcrumbItems"
-          separator="i-lucide-slash"
-          class="text-sm"
-        />
+        <UBreadcrumb :items="breadcrumbItems" class="text-sm">
+          <template #separator>
+            <span class="text-muted px-1">/</span>
+          </template>
+        </UBreadcrumb>
 
         <div class="flex items-center gap-2">
           <UFieldGroup v-if="post">
@@ -207,6 +220,15 @@ useSeoMeta({
               />
             </UDropdownMenu>
           </UFieldGroup>
+          <UButton
+            v-if="post"
+            variant="soft"
+            color="neutral"
+            size="sm"
+            icon="i-lucide-share-2"
+            label="Graph"
+            @click="graphOpen = true"
+          />
 
           <UButton
             variant="ghost"
@@ -251,11 +273,10 @@ useSeoMeta({
       </div>
 
       <div v-else class="relative">
-        <div class="relative mx-auto max-w-3xl px-6 py-12 sm:py-16">
-          <aside
-            v-if="post.headings && post.headings.length > 0"
-            class="absolute top-16 bottom-0 left-full ml-10 hidden w-56 xl:block"
-          >
+        <div
+          class="mx-auto grid max-w-7xl gap-10 px-6 py-12 sm:py-16 xl:grid-cols-[12rem_minmax(0,1fr)_20rem]"
+        >
+          <aside v-if="post.headings?.length" class="hidden xl:block">
             <div class="sticky top-24">
               <span
                 class="text-muted mb-4 block text-xs font-bold tracking-widest uppercase"
@@ -267,11 +288,11 @@ useSeoMeta({
                   :key="item.id"
                   type="button"
                   class="-ml-px block w-full cursor-pointer border-l-2 py-1 text-left transition-colors duration-200"
-                  :class="[
+                  :class="
                     activeHeadingId === item.id
                       ? 'border-primary text-primary font-medium'
-                      : 'text-muted hover:text-highlighted hover:border-muted border-transparent',
-                  ]"
+                      : 'text-muted hover:text-highlighted hover:border-muted border-transparent'
+                  "
                   :style="{
                     paddingLeft: `${(item.level - 1) * 0.75 + 0.875}rem`,
                   }"
@@ -292,7 +313,6 @@ useSeoMeta({
               >
                 {{ post.title || "Untitled" }}
               </h1>
-
               <div
                 class="border-default text-muted flex flex-wrap items-center gap-x-3 gap-y-2 border-b pb-6 text-sm"
               >
@@ -313,7 +333,6 @@ useSeoMeta({
                     post.author?.name || "Author"
                   }}</span>
                 </div>
-
                 <span class="opacity-40">•</span>
                 <NuxtTime
                   :datetime="post.createdAt"
@@ -322,17 +341,15 @@ useSeoMeta({
                   day="numeric"
                   year="numeric"
                 />
-
-                <span class="opacity-40">•</span>
-                <span>{{ wordCountText }}</span>
-
-                <span class="opacity-40">•</span>
-                <span>{{ readingTimeText }}</span>
+                <span class="opacity-40">•</span
+                ><span>{{ wordCountText }}</span>
+                <span class="opacity-40">•</span
+                ><span>{{ readingTimeText }}</span>
               </div>
             </header>
 
             <div
-              v-if="post.headings && post.headings.length > 0"
+              v-if="post.headings?.length"
               class="border-default bg-default/80 sticky top-[3.5rem] z-20 -mx-6 mb-10 border-b px-6 py-4 backdrop-blur-md xl:hidden"
             >
               <details class="group">
@@ -351,11 +368,11 @@ useSeoMeta({
                     :key="item.id"
                     type="button"
                     class="block w-full cursor-pointer text-left transition-colors"
-                    :class="[
+                    :class="
                       activeHeadingId === item.id
                         ? 'text-primary font-medium'
-                        : 'text-muted hover:text-highlighted',
-                    ]"
+                        : 'text-muted hover:text-highlighted'
+                    "
                     :style="{ paddingLeft: `${(item.level - 1) * 1}rem` }"
                     @click="scrollToHeading(item)"
                   >
@@ -366,16 +383,53 @@ useSeoMeta({
                 </nav>
               </details>
             </div>
-
             <div
               class="prose prose-lg dark:prose-invert max-w-none"
               v-html="post.content"
             />
-
             <AppFooter class="mt-16" />
           </article>
+
+          <aside class="hidden xl:block">
+            <div class="sticky top-24">
+              <div class="mb-3 flex items-center justify-between">
+                <span
+                  class="text-muted text-xs font-bold tracking-widest uppercase"
+                  >Graph</span
+                >
+                <UButton
+                  icon="i-lucide-maximize-2"
+                  size="xs"
+                  color="neutral"
+                  variant="ghost"
+                  aria-label="Expand graph"
+                  @click="graphOpen = true"
+                />
+              </div>
+              <GraphView
+                v-if="graph"
+                :graph="graph"
+                :active-slug="slug"
+                @select="navigateTo(`/posts/${$event}`)"
+              />
+            </div>
+          </aside>
         </div>
       </div>
+      <UModal
+        v-model:open="graphOpen"
+        title="Post graph"
+        :ui="{ content: 'sm:max-w-5xl' }"
+      >
+        <template #body>
+          <GraphView
+            v-if="graph"
+            :graph="graph"
+            :active-slug="slug"
+            @select="navigateTo(`/posts/${$event}`)"
+          />
+        </template>
+      </UModal>
     </main>
   </div>
 </template>
