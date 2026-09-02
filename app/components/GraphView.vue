@@ -135,7 +135,9 @@ const moveDrag = (event: PointerEvent) => {
     (event.clientX - graphLeft.value - (graphWidth.value - width * scale) / 2) /
     scale;
   const y =
-    (event.clientY - graphTop.value - (graphHeight.value - height * scale) / 2) /
+    (event.clientY -
+      graphTop.value -
+      (graphHeight.value - height * scale) / 2) /
     scale;
   nodePositions.set(drag.nodeId, {
     x: (x - view.x) / view.scale,
@@ -163,43 +165,110 @@ const nodeLabel = (node: GraphNode) => node.title || node.slug;
 </script>
 
 <template>
-  <div class="border-default bg-elevated/30 relative min-h-72 overflow-hidden rounded-xl border">
-    <div v-if="!graph.nodes.length" class="text-muted flex h-72 items-center justify-center text-sm">
+  <div
+    class="border-default bg-elevated/30 relative min-h-72 overflow-hidden rounded-xl border"
+  >
+    <div
+      v-if="!graph.nodes.length"
+      class="text-muted flex h-72 items-center justify-center text-sm"
+    >
       No linked posts yet.
     </div>
-    <svg v-else ref="graphSvg" :viewBox="`0 0 ${width} ${height}`" class="h-full min-h-72 w-full touch-none select-none"
-      role="img" aria-label="Post relationship graph" @pointerdown.self="startCanvasDrag" @pointermove="moveDrag"
-      @pointerup="stopDrag" @pointercancel="stopDrag" @wheel="handleWheel">
+    <svg
+      v-else
+      ref="graphSvg"
+      :viewBox="`0 0 ${width} ${height}`"
+      class="h-full min-h-72 w-full touch-none select-none"
+      role="img"
+      aria-label="Post relationship graph"
+      @pointerdown.self="startCanvasDrag"
+      @pointermove="moveDrag"
+      @pointerup="stopDrag"
+      @pointercancel="stopDrag"
+      @wheel="handleWheel"
+    >
       <g :transform="`translate(${view.x} ${view.y}) scale(${view.scale})`">
         <defs>
-          <marker id="graph-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <marker
+            id="graph-arrow"
+            markerWidth="8"
+            markerHeight="8"
+            refX="7"
+            refY="4"
+            orient="auto"
+          >
             <path d="M0,0 L8,4 L0,8 z" class="text-muted fill-current" />
           </marker>
         </defs>
-        <line v-for="edge in edgePoints" :key="`${edge.source}-${edge.target}`" :x1="edge.sourcePoint.x"
-          :y1="edge.sourcePoint.y" :x2="edge.targetPoint.x" :y2="edge.targetPoint.y" class="text-muted"
-          stroke="currentColor" stroke-width="1.5" marker-end="url(#graph-arrow)" />
-        <g v-for="node in graph.nodes" :key="node.id"
+        <line
+          v-for="edge in edgePoints"
+          :key="`${edge.source}-${edge.target}`"
+          :x1="edge.sourcePoint.x"
+          :y1="edge.sourcePoint.y"
+          :x2="edge.targetPoint.x"
+          :y2="edge.targetPoint.y"
+          class="text-muted"
+          stroke="currentColor"
+          stroke-width="1.5"
+          marker-end="url(#graph-arrow)"
+        />
+        <g
+          v-for="node in graph.nodes"
+          :key="node.id"
           :transform="`translate(${positions.get(node.id)?.x || 0} ${positions.get(node.id)?.y || 0})`"
-          class="cursor-pointer outline-none" role="button" tabindex="0" :aria-label="`Open ${nodeLabel(node)}`"
-          @pointerdown.stop="startNodeDrag($event, node)" @click="selectNode(node)" @keydown.enter="selectNode(node)"
-          @keydown.space.prevent="selectNode(node)">
-          <circle r="10" :class="node.slug === activeSlug
-            ? 'fill-primary stroke-primary'
-            : 'fill-default stroke-primary/60'
-            " stroke-width="2" />
-          <text y="26" text-anchor="middle" class="text-highlighted fill-current text-[11px]">
+          class="cursor-pointer outline-none"
+          role="button"
+          tabindex="0"
+          :aria-label="`Open ${nodeLabel(node)}`"
+          @pointerdown.stop="startNodeDrag($event, node)"
+          @click="selectNode(node)"
+          @keydown.enter="selectNode(node)"
+          @keydown.space.prevent="selectNode(node)"
+        >
+          <circle
+            r="10"
+            :class="
+              node.slug === activeSlug
+                ? 'fill-primary stroke-primary'
+                : 'fill-default stroke-primary/60'
+            "
+            stroke-width="2"
+          />
+          <text
+            y="26"
+            text-anchor="middle"
+            class="text-highlighted fill-current text-[11px]"
+          >
             {{ nodeLabel(node) }}
           </text>
         </g>
       </g>
     </svg>
     <div class="absolute top-3 right-3 flex gap-1">
-      <UButton icon="i-lucide-minus" size="xs" color="neutral" variant="soft" aria-label="Zoom out"
-        @click="zoom(-0.15)" />
-      <UButton icon="i-lucide-plus" size="xs" color="neutral" variant="soft" aria-label="Zoom in" @click="zoom(0.15)" />
-      <UButton icon="i-lucide-rotate-ccw" size="xs" color="neutral" variant="soft" aria-label="Reset graph"
-        @click="reset" />
+      <UButton
+        icon="i-lucide-minus"
+        size="xs"
+        color="neutral"
+        variant="soft"
+        aria-label="Zoom out"
+        @click="zoom(-0.15)"
+      />
+      <UButton
+        icon="i-lucide-plus"
+        size="xs"
+        color="neutral"
+        variant="soft"
+        aria-label="Zoom in"
+        @click="zoom(0.15)"
+      />
+      <UButton
+        icon="i-lucide-rotate-ccw"
+        size="xs"
+        color="neutral"
+        variant="soft"
+        aria-label="Reset graph"
+        @click="reset"
+      />
     </div>
   </div>
 </template>
