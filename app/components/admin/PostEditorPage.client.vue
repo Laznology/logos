@@ -47,6 +47,62 @@ const toast = useToast();
 const { post, pending, savingStatus, performAutoSave, error } = usePostEditor();
 const { $csrfFetch } = useNuxtApp();
 const { copy, isSupported } = useClipboard();
+const isAddingTag = ref(false);
+const newTagInput = ref("");
+const tagInputRef = ref<HTMLInputElement | null>(null);
+
+const currentTags = computed(() => {
+  const meta = (post.value?.metadata as Record<string, unknown>) || {};
+  return Array.isArray(meta.tags) ? (meta.tags as string[]) : [];
+});
+
+const startAddingTag = async () => {
+  isAddingTag.value = true;
+  await nextTick();
+  tagInputRef.value?.focus();
+};
+
+const addTag = () => {
+  const raw = newTagInput.value.trim().toLowerCase();
+  if (!raw || !post.value) {
+    isAddingTag.value = false;
+    newTagInput.value = "";
+    return;
+  }
+  const currentMeta = (post.value.metadata as Record<string, unknown>) || {};
+  const tags = Array.isArray(currentMeta.tags)
+    ? [...(currentMeta.tags as string[])]
+    : [];
+
+  if (!tags.includes(raw)) {
+    tags.push(raw);
+    post.value.metadata = { ...currentMeta, tags };
+    performAutoSave();
+  }
+
+  // Keep input open and empty for continuous multi-tag additions
+  newTagInput.value = "";
+  tagInputRef.value?.focus();
+};
+
+const removeTag = (tagToRemove: string) => {
+  if (!post.value) {
+    return;
+  }
+  const currentMeta = (post.value.metadata as Record<string, unknown>) || {};
+  const tags = (
+    Array.isArray(currentMeta.tags) ? (currentMeta.tags as string[]) : []
+  ).filter((t) => t !== tagToRemove);
+  post.value.metadata = { ...currentMeta, tags };
+  performAutoSave();
+};
+
+const onTagInputBlur = () => {
+  if (newTagInput.value.trim()) {
+    addTag();
+  }
+  isAddingTag.value = false;
+};
 const graphOpen = ref(false);
 const graphResponse = await useFetch<{ success: boolean; data: PostGraph }>(
   "/api/graph",
@@ -283,9 +339,55 @@ const deletePost = async () => {
           v-model="post.title"
           type="text"
           placeholder="Untitled"
-          class="text-highlighted placeholder:text-muted/40 mb-6 w-full border-none bg-transparent text-4xl font-extrabold outline-none focus:ring-0 focus:outline-none sm:pl-8 sm:text-5xl"
+          class="text-highlighted placeholder:text-muted/40 mb-3 w-full border-none bg-transparent text-4xl font-extrabold outline-none focus:ring-0 focus:outline-none sm:pl-8 sm:text-5xl"
           @input="performAutoSave"
         />
+
+        <!-- Tags below title -->
+        <div class="mb-8 flex flex-wrap items-center gap-2 sm:pl-8">
+          <span
+            v-for="tag in currentTags"
+            :key="tag"
+            class="border-default bg-elevated/60 text-muted hover:text-highlighted group inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium transition"
+          >
+            <span class="text-primary/70 font-semibold">#</span>{{ tag }}
+            <button
+              type="button"
+              class="text-muted/60 hover:text-error ml-0.5 inline-flex cursor-pointer items-center transition"
+              aria-label="Remove tag"
+              @click="removeTag(tag)"
+            >
+              <UIcon name="i-lucide-x" class="size-3" />
+            </button>
+          </span>
+
+          <div
+            v-if="isAddingTag"
+            class="border-default bg-elevated/80 inline-flex items-center rounded-full border px-2 py-0.5"
+          >
+            <span class="text-primary/70 text-xs font-semibold">#</span>
+            <input
+              ref="tagInputRef"
+              v-model="newTagInput"
+              type="text"
+              placeholder="tag-name"
+              class="text-highlighted placeholder:text-muted/40 h-5 w-24 border-none bg-transparent px-1 text-xs outline-none focus:ring-0 focus:outline-none"
+              @keydown.enter.prevent="addTag"
+              @keydown.esc="isAddingTag = false"
+              @blur="onTagInputBlur"
+            />
+          </div>
+
+          <button
+            v-else
+            type="button"
+            class="border-default/60 hover:border-primary/50 text-muted hover:text-highlighted inline-flex cursor-pointer items-center gap-1 rounded-full border border-dashed px-2.5 py-0.5 text-xs font-medium transition"
+            @click="startAddingTag"
+          >
+            <UIcon name="i-lucide-plus" class="size-3" />
+            <span>Add tag</span>
+          </button>
+        </div>
 
         <UEditor
           v-slot="{ editor }"

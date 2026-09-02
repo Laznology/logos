@@ -56,6 +56,7 @@ export const usePostEditor = () => {
           body: {
             title: post.value.title || "Untitled",
             content: post.value.content,
+            metadata: post.value.metadata,
           },
         });
 
@@ -85,6 +86,7 @@ export const usePostEditor = () => {
             body: {
               title: post.value.title || "Untitled",
               content: post.value.content,
+              metadata: post.value.metadata,
             },
           }
         );

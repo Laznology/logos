@@ -13,7 +13,53 @@ const toast = useToast();
 const { copy, isSupported } = useClipboard();
 const { $csrfFetch } = useNuxtApp();
 const isUpdatingPublish = ref(false);
+const tagsInput = ref("");
 
+watch(
+  () => props.post.metadata,
+  (meta) => {
+    const record = (meta as Record<string, unknown>) || {};
+    tagsInput.value = Array.isArray(record.tags)
+      ? (record.tags as string[]).join(", ")
+      : "";
+  },
+  { immediate: true }
+);
+
+const saveTags = async () => {
+  if (!props.post.slug) {
+    return;
+  }
+  try {
+    const currentMeta = (props.post.metadata as Record<string, unknown>) || {};
+    const tags = tagsInput.value
+      .split(",")
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean);
+    const updatedMetadata = { ...currentMeta, tags };
+
+    const response = await $csrfFetch<{
+      success: boolean;
+      data: PostSelectType;
+    }>(`/api/posts/${props.post.slug}`, {
+      method: "PUT",
+      body: {
+        title: props.post.title,
+        content: props.post.content,
+        metadata: updatedMetadata,
+      },
+    });
+
+    if (response.data) {
+      emit("updatePost", response.data);
+    }
+  } catch {
+    toast.add({
+      title: "Failed to update tags",
+      color: "error",
+    });
+  }
+};
 const isPublished = computed(() => {
   const metadata = (props.post.metadata as Record<string, unknown>) || {};
   return metadata.status === "published";
@@ -156,6 +202,19 @@ const mobileDropdownItems = computed(() => [
               <span class="text-muted mt-1 text-xs">/{{ post.slug }}</span>
             </div>
 
+            <div class="space-y-1.5 text-left">
+              <label class="text-highlighted text-xs font-medium"
+                >Tags (comma-separated)</label
+              >
+              <UInput
+                v-model="tagsInput"
+                placeholder="essay, tech, design"
+                size="sm"
+                class="text-xs"
+                @blur="saveTags"
+                @keydown.enter.prevent="saveTags"
+              />
+            </div>
             <div v-if="!isPublished" class="space-y-3">
               <UButton
                 block

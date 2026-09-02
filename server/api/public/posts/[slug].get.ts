@@ -20,6 +20,11 @@ export default defineEventHandler(async (event) => {
     return `# ${post.title}\n\n${markdown}`;
   }
 
+  const metadata = (post.metadata as Record<string, unknown>) || {};
+  const tags = Array.isArray(metadata.tags)
+    ? (metadata.tags as string[]).filter(Boolean)
+    : [];
+
   return {
     success: true,
     data: {
@@ -31,6 +36,7 @@ export default defineEventHandler(async (event) => {
       wordCount,
       readingTime,
       markdown,
+      tags,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
       author: post.author,

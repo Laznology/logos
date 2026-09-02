@@ -219,7 +219,30 @@ class PostService {
     return { success: true, slug };
   }
 
-  async listPublicPosts() {
+  async listPublicPosts(tag?: string, search?: string) {
+    // ponytail: SQLite json_each for json array tag lookup without junction table
+    const conditions = [
+      sql`json_extract(${postTable.metadata}, '$.status') = 'published'`,
+    ];
+    if (tag) {
+      conditions.push(
+        sql`exists (select 1 from json_each(${postTable.metadata}, '$.tags') where json_each.value = ${tag})`
+      );
+    }
+    if (search) {
+      const sanitized = search.replaceAll(/["*]/g, "").trim();
+      if (sanitized) {
+        const ftsQuery = `"${sanitized}"*`;
+        conditions.push(
+          sql`${postTable.id} IN (
+            SELECT id FROM posts_fts
+            WHERE posts_fts MATCH ${ftsQuery}
+            ORDER BY rank
+          )`
+        );
+      }
+    }
+
     const posts = await this.database
       .select({
         id: postTable.id,
@@ -236,7 +259,7 @@ class PostService {
       })
       .from(postTable)
       .leftJoin(userTable, eq(userTable.id, postTable.userId))
-      .where(sql`json_extract(${postTable.metadata}, '$.status') = 'published'`)
+      .where(and(...conditions))
       .orderBy(desc(postTable.createdAt));
     return posts.map(withAuthorAvatarUrl);
   }
