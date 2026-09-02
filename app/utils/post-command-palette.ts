@@ -2,13 +2,13 @@ export interface PalettePost {
   id: string;
   title: string;
   slug: string;
-  metadata: unknown;
+  metadata?: unknown;
   createdAt: Date | string;
-  author: {
+  author?: {
     id?: string | null;
     name: string | null;
     avatar: string | null;
-  };
+  } | null;
 }
 
 interface PaletteFilters {
@@ -34,7 +34,7 @@ export function filterPalettePosts<T extends PalettePost>(
       if (filters.status !== "all" && postStatus(post) !== filters.status) {
         return false;
       }
-      if (filters.authorId && post.author.id !== filters.authorId) {
+      if (filters.authorId && post.author?.id !== filters.authorId) {
         return false;
       }
       return (
@@ -46,7 +46,7 @@ export function filterPalettePosts<T extends PalettePost>(
     .slice(0, 20);
 }
 
-export function groupPostsByDate<T extends PalettePost>(
+export function groupPostsByDate<T extends { createdAt: Date | string }>(
   posts: T[],
   now = new Date()
 ): { id: string; label: string; items: T[] }[] {

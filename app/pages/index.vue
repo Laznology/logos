@@ -6,6 +6,7 @@ interface PublicPostListItem {
   preview: string;
   wordCount: number;
   readingTime: number;
+  tags?: string[];
   createdAt: string | Date;
   updatedAt: string | Date;
   author: {
@@ -19,6 +20,36 @@ interface ApiResponse {
   data: PublicPostListItem[];
 }
 
+const route = useRoute();
+const selectedTag = computed(() => (route.query.tag as string) || "");
+const commandPaletteOpen = ref(false);
+const searchQuery = ref((route.query.q as string) || "");
+const debouncedSearch = refDebounced(searchQuery, 300);
+watch(debouncedSearch, (newQ) => {
+  const currentQ = (route.query.q as string) || "";
+  if (newQ !== currentQ) {
+    navigateTo(
+      {
+        query: {
+          ...route.query,
+          q: newQ.trim() || undefined,
+        },
+      },
+      { replace: true }
+    );
+  }
+});
+
+watch(
+  () => route.query.q,
+  (newQ) => {
+    const val = (newQ as string) || "";
+    if (val !== searchQuery.value) {
+      searchQuery.value = val;
+    }
+  }
+);
+
 const colorMode = useColorMode();
 const toggleTheme = () => {
   colorMode.preference = colorMode.value === "dark" ? "light" : "dark";
@@ -26,8 +57,68 @@ const toggleTheme = () => {
 
 const { data: posts, pending } = await useFetch("/api/public/posts", {
   key: "public-blog-posts",
+  query: computed(() => {
+    const params: Record<string, string> = {};
+    if (selectedTag.value) {
+      params.tag = selectedTag.value;
+    }
+    if (debouncedSearch.value.trim()) {
+      params.q = debouncedSearch.value.trim();
+    }
+    return params;
+  }),
   transform: (response: ApiResponse) => response.data || [],
 });
+
+const filterByTag = (tag: string) => {
+  if (selectedTag.value === tag) {
+    navigateTo(
+      { query: { ...route.query, tag: undefined } },
+      { replace: true }
+    );
+  } else {
+    navigateTo({ query: { ...route.query, tag } }, { replace: true });
+  }
+};
+
+const clearTag = () => {
+  navigateTo({ query: { ...route.query, tag: undefined } }, { replace: true });
+};
+
+const clearSearch = () => {
+  searchQuery.value = "";
+  navigateTo({ query: { ...route.query, q: undefined } }, { replace: true });
+};
+
+const resetAll = () => {
+  searchQuery.value = "";
+  navigateTo({ query: {} }, { replace: true });
+};
+
+const escapeHtml = (str: string) =>
+  str
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+
+const highlightMatch = (text: string, query: string) => {
+  if (!text) {
+    return "";
+  }
+  const safeText = escapeHtml(text);
+  const trimmed = query.trim();
+  if (!trimmed) {
+    return safeText;
+  }
+  const escaped = trimmed.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(${escaped})`, "gi");
+  return safeText.replaceAll(
+    regex,
+    '<mark class="bg-primary/20 text-highlighted rounded px-0.5 font-semibold">$1</mark>'
+  );
+};
 
 const SITE_NAME = "Logos Publication";
 const SITE_DESCRIPTION =
@@ -62,19 +153,32 @@ defineOgImage(
       <div
         class="mx-auto flex h-14 max-w-6xl items-center justify-between px-6"
       >
-        <NuxtLink
-          to="/"
-          class="text-highlighted flex items-center gap-2.5 font-semibold transition hover:opacity-80"
-        >
-          <img
-            src="/favicon.ico"
-            alt="Logos"
-            class="size-5 rounded object-contain"
-          />
-          <span class="text-sm font-bold tracking-tight">Logos</span>
+        <NuxtLink to="/" class="transition hover:opacity-80">
+          <AppLogo />
         </NuxtLink>
 
         <div class="flex items-center gap-2">
+          <UButton
+            variant="subtle"
+            color="neutral"
+            size="sm"
+            icon="i-lucide-search"
+            class="hidden items-center gap-2 sm:flex"
+            @click="commandPaletteOpen = true"
+          >
+            <span class="text-muted text-xs">Search articles...</span>
+            <UKbd size="sm">⌘K</UKbd>
+          </UButton>
+          <UButton
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            icon="i-lucide-search"
+            class="sm:hidden"
+            aria-label="Search"
+            @click="commandPaletteOpen = true"
+          />
+
           <UButton
             variant="ghost"
             color="neutral"
@@ -102,6 +206,51 @@ defineOgImage(
           </p>
         </div>
 
+        <div
+          v-if="selectedTag || debouncedSearch.trim()"
+          class="mb-8 flex flex-wrap items-center gap-2"
+        >
+          <span class="text-muted text-xs font-medium">Filtered by:</span>
+          <span
+            v-if="selectedTag"
+            class="border-primary/30 bg-primary/10 text-primary inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold"
+          >
+            #{{ selectedTag }}
+            <button
+              type="button"
+              class="hover:text-highlighted ml-0.5 inline-flex cursor-pointer items-center transition"
+              aria-label="Clear tag"
+              @click="clearTag"
+            >
+              <UIcon name="i-lucide-x" class="size-3" />
+            </button>
+          </span>
+
+          <span
+            v-if="debouncedSearch.trim()"
+            class="border-default bg-elevated text-highlighted inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium"
+          >
+            <UIcon name="i-lucide-search" class="size-3 opacity-60" />
+            "{{ debouncedSearch.trim() }}"
+            <button
+              type="button"
+              class="text-muted hover:text-highlighted ml-0.5 inline-flex cursor-pointer items-center transition"
+              aria-label="Clear search"
+              @click="clearSearch"
+            >
+              <UIcon name="i-lucide-x" class="size-3" />
+            </button>
+          </span>
+
+          <button
+            type="button"
+            class="text-muted hover:text-highlighted text-xs underline underline-offset-2 transition"
+            @click="resetAll"
+          >
+            Reset all
+          </button>
+        </div>
+
         <div v-if="pending" class="space-y-8">
           <div v-for="i in 3" :key="i" class="space-y-3 pb-8">
             <USkeleton class="bg-muted h-7 w-3/4 rounded-md" />
@@ -116,11 +265,32 @@ defineOgImage(
         >
           <UEmpty
             icon="i-lucide-book-open"
-            title="No published posts yet"
-            description="Write and publish your first article from the Logos Studio."
+            :title="
+              selectedTag || debouncedSearch.trim()
+                ? 'No matching articles'
+                : 'No published posts yet'
+            "
+            :description="
+              selectedTag || debouncedSearch.trim()
+                ? 'Try checking your spelling or clearing filters.'
+                : 'Check back later for new essays and stories.'
+            "
           >
             <template #actions>
-              <UButton to="/admin" icon="i-lucide-plus" label="Go to Studio" />
+              <UButton
+                v-if="selectedTag || debouncedSearch.trim()"
+                variant="outline"
+                color="neutral"
+                icon="i-lucide-rotate-ccw"
+                label="Reset filters"
+                @click="resetAll"
+              />
+              <UButton
+                v-else
+                to="/"
+                icon="i-lucide-house"
+                label="Back to Home"
+              />
             </template>
           </UEmpty>
         </div>
@@ -134,16 +304,16 @@ defineOgImage(
             <NuxtLink :to="`/posts/${post.slug}`" class="block space-y-3">
               <h2
                 class="text-highlighted group-hover:text-primary text-xl font-bold tracking-tight transition sm:text-2xl"
-              >
-                {{ post.title || "Untitled" }}
-              </h2>
+                v-html="
+                  highlightMatch(post.title || 'Untitled', debouncedSearch)
+                "
+              />
 
               <p
                 v-if="post.preview"
                 class="text-muted line-clamp-2 text-sm leading-relaxed"
-              >
-                {{ post.preview }}
-              </p>
+                v-html="highlightMatch(post.preview, debouncedSearch)"
+              />
 
               <div
                 class="text-muted flex flex-wrap items-center gap-x-2 gap-y-1 text-xs"
@@ -175,6 +345,20 @@ defineOgImage(
                 <span class="opacity-40">•</span>
                 <span>{{ post.readingTime }} min read</span>
               </div>
+
+              <div
+                v-if="post.tags && post.tags.length > 0"
+                class="flex flex-wrap items-center gap-1.5 pt-1"
+              >
+                <span
+                  v-for="tag in post.tags"
+                  :key="tag"
+                  class="border-default bg-elevated/40 text-muted hover:border-primary/40 hover:text-primary inline-flex cursor-pointer items-center gap-0.5 rounded-full border px-2 py-0.5 text-xs font-medium transition"
+                  @click.stop.prevent="filterByTag(tag)"
+                >
+                  <span class="text-primary/70 font-semibold">#</span>{{ tag }}
+                </span>
+              </div>
             </NuxtLink>
           </article>
         </div>
@@ -182,5 +366,6 @@ defineOgImage(
     </main>
 
     <AppFooter />
+    <PublicCommandPalette v-model:open="commandPaletteOpen" />
   </div>
 </template>

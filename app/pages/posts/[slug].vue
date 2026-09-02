@@ -19,6 +19,7 @@ interface PublicPostData {
   wordCount: number;
   readingTime: number;
   markdown: string;
+  tags?: string[];
   createdAt: string | Date;
   updatedAt: string | Date;
   author: {
@@ -44,7 +45,7 @@ const toast = useToast();
 const { copy, isSupported } = useClipboard();
 const { y } = useWindowScroll();
 const graphOpen = ref(false);
-
+const commandPaletteOpen = ref(false);
 const readingProgress = computed(() => {
   if (import.meta.server) {
     return 0;
@@ -83,7 +84,7 @@ const wordCountText = computed(() => {
 });
 
 const breadcrumbItems = computed<BreadcrumbItem[]>(() => [
-  { label: "Logos", avatar: { src: "/favicon.ico" }, to: "/" },
+  { label: "Logos", avatar: { src: "/apple-touch-icon.png" }, to: "/" },
   { label: post.value?.title || "Untitled" },
 ]);
 
@@ -290,6 +291,15 @@ useSchemaOrg(
             variant="ghost"
             color="neutral"
             size="sm"
+            icon="i-lucide-search"
+            aria-label="Search articles"
+            @click="commandPaletteOpen = true"
+          />
+
+          <UButton
+            variant="ghost"
+            color="neutral"
+            size="sm"
             :icon="
               colorMode.value === 'dark' ? 'i-lucide-moon' : 'i-lucide-sun'
             "
@@ -402,6 +412,20 @@ useSchemaOrg(
                 <span class="opacity-40">•</span
                 ><span>{{ readingTimeText }}</span>
               </div>
+
+              <div
+                v-if="post.tags && post.tags.length > 0"
+                class="flex flex-wrap items-center gap-1.5 pt-1"
+              >
+                <NuxtLink
+                  v-for="tag in post.tags"
+                  :key="tag"
+                  :to="`/?tag=${encodeURIComponent(tag)}`"
+                  class="border-default bg-elevated/40 text-muted hover:border-primary/40 hover:text-primary inline-flex cursor-pointer items-center gap-0.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition"
+                >
+                  <span class="text-primary/70 font-semibold">#</span>{{ tag }}
+                </NuxtLink>
+              </div>
             </header>
 
             <div
@@ -486,6 +510,7 @@ useSchemaOrg(
           />
         </template>
       </UModal>
+      <PublicCommandPalette v-model:open="commandPaletteOpen" />
     </main>
   </div>
 </template>
