@@ -56,8 +56,12 @@ const handleClearError = () => {
             to="/"
             class="text-highlighted flex items-center gap-2 font-semibold transition hover:opacity-80"
           >
-            <UIcon name="i-lucide-box" class="text-primary size-5" />
-            <span class="text-sm tracking-tight">Logos</span>
+            <img
+              src="/favicon.ico"
+              alt="Logos"
+              class="size-5 rounded object-contain"
+            />
+            <span class="text-sm font-bold tracking-tight">Logos</span>
           </NuxtLink>
 
           <UButton

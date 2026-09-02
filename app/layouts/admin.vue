@@ -84,7 +84,11 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
       <template #header="{ collapsed }">
         <div class="flex w-full items-center justify-between">
           <div class="flex items-center gap-2">
-            <UAvatar icon="i-lucide-box" size="sm" color="neutral" />
+            <img
+              src="/favicon.ico"
+              alt="Logos"
+              class="size-6 rounded object-contain"
+            />
             <span v-if="!collapsed" class="text-highlighted font-semibold">
               Logos
             </span>
