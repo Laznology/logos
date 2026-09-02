@@ -1,3 +1,6 @@
+const nitroPreset = process.env.NITRO_PRESET ?? "node-server";
+const isCloudflarePreset = nitroPreset.startsWith("cloudflare");
+const NOINDEX_ROBOTS = "noindex, nofollow";
 export default defineNuxtConfig({
   compatibilityDate: "2026-06-30",
 
@@ -5,6 +8,54 @@ export default defineNuxtConfig({
 
   devtools: {
     enabled: true,
+  },
+
+  site: {
+    url: process.env.NUXT_SITE_URL,
+    name: "Logos Publication",
+    description: "Distraction-free thoughts, essays, and stories.",
+    defaultLocale: "en",
+    trailingSlash: false,
+  },
+
+  robots: {
+    groups: [
+      {
+        userAgent: "*",
+        disallow: ["/admin", "/login", "/register"],
+      },
+    ],
+  },
+
+  sitemap: {
+    sources: ["/api/__sitemap__/urls"],
+    exclude: ["/admin/**", "/api/**", "/login", "/register"],
+  },
+
+  routeRules: {
+    "/admin/**": { ssr: false, robots: NOINDEX_ROBOTS },
+    "/login": { robots: NOINDEX_ROBOTS },
+    "/register": { robots: NOINDEX_ROBOTS },
+  },
+
+  icon: {
+    serverBundle: "auto",
+  },
+
+  ogImage: {
+    enabled: true,
+    compatibility: {
+      runtime: {
+        takumi: isCloudflarePreset ? "wasm" : "node",
+      },
+    },
+    defaults: {
+      width: 1200,
+      height: 630,
+      extension: "png",
+      emojis: false,
+      cacheMaxAgeSeconds: 60 * 60 * 24,
+    },
   },
 
   hub: {
@@ -20,7 +71,7 @@ export default defineNuxtConfig({
     "nuxt-csurf",
     "@vueuse/nuxt",
     "nuxt-auth-utils",
-    "@nuxt/test-utils",
+    "@nuxtjs/seo",
   ],
 
   ui: {
@@ -40,6 +91,8 @@ export default defineNuxtConfig({
   },
 
   nitro: {
+    preset: nitroPreset,
+    ...(isCloudflarePreset ? {} : { exportConditions: ["!unwasm"] }),
     minify: true,
     prerender: {
       crawlLinks: false,
@@ -58,7 +111,6 @@ export default defineNuxtConfig({
         "@nuxt/ui > prosemirror-model",
         "@nuxt/ui > prosemirror-view",
         "@nuxt/ui > prosemirror-gapcursor",
-        "prosemirror-tables",
         "@tiptap/pm > prosemirror-state",
         "@tiptap/pm > prosemirror-transform",
         "@tiptap/pm > prosemirror-model",

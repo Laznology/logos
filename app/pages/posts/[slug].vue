@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import type { DropdownMenuItem } from "@nuxt/ui";
+import type { BreadcrumbItem, DropdownMenuItem } from "@nuxt/ui";
 
 import type { PostGraph } from "#shared/types/graph";
-import TableOfContentsView from "~/components/editor/TableOfContents.vue";
 import GraphView from "~/components/GraphView.vue";
 
 interface HeadingItem {
@@ -83,14 +82,24 @@ const wordCountText = computed(() => {
   return `${count} ${count === 1 ? "word" : "words"}`;
 });
 
-const breadcrumbItems = computed(() => [
-  { label: "Home", icon: "i-lucide-house", to: "/" },
+const breadcrumbItems = computed<BreadcrumbItem[]>(() => [
+  { label: "Logos", avatar: { src: "/favicon.ico" }, to: "/" },
   { label: post.value?.title || "Untitled" },
 ]);
 
 const readingTimeText = computed(() => {
   const time = post.value?.readingTime || 1;
   return `${time} min read`;
+});
+
+const seoDescription = computed(() => {
+  const description = post.value?.markdown
+    .replaceAll(/[#*`_~[\]()]/g, " ")
+    .replaceAll(/\s+/g, " ")
+    .trim()
+    .slice(0, 160);
+
+  return description || `${post.value?.title || "Read post"} on Logos`;
 });
 
 const copyPageAsMarkdown = async () => {
@@ -177,10 +186,57 @@ onMounted(() => {
   }
 });
 
+const DEFAULT_PUBLISHER = "Logos Publication";
+const DEFAULT_POST_TITLE = "Post";
+
 useSeoMeta({
-  title: computed(() => post.value?.title || "Post"),
-  description: computed(() => `${post.value?.title || "Read post"} on Logos`),
+  title: () => post.value?.title || DEFAULT_POST_TITLE,
+  description: () => seoDescription.value,
+  ogTitle: () => post.value?.title || DEFAULT_POST_TITLE,
+  ogDescription: () => seoDescription.value,
+  ogType: "article",
+  articlePublishedTime: () =>
+    post.value?.createdAt
+      ? new Date(post.value.createdAt).toISOString()
+      : undefined,
+  articleModifiedTime: () =>
+    post.value?.updatedAt
+      ? new Date(post.value.updatedAt).toISOString()
+      : undefined,
+  articleAuthor: () => [post.value?.author?.name || DEFAULT_PUBLISHER],
+  twitterCard: "summary_large_image",
 });
+
+defineOgImage(
+  "Publication",
+  {
+    title: () => (post.value?.title || DEFAULT_POST_TITLE).slice(0, 140),
+    description: () => seoDescription.value,
+    author: () => post.value?.author?.name || DEFAULT_PUBLISHER,
+    publishedAt: () =>
+      post.value?.createdAt
+        ? new Intl.DateTimeFormat("en", {
+            month: "long",
+            year: "numeric",
+          }).format(new Date(post.value.createdAt))
+        : undefined,
+  },
+  {
+    alt: () => post.value?.title || DEFAULT_POST_TITLE,
+  }
+);
+
+useSchemaOrg(
+  computed(() => [
+    defineArticle({
+      headline: post.value?.title || DEFAULT_POST_TITLE,
+      description: seoDescription.value,
+      datePublished: post.value?.createdAt,
+      dateModified: post.value?.updatedAt,
+      author: { name: post.value?.author?.name || DEFAULT_PUBLISHER },
+    }),
+  ])
+);
 </script>
 
 <template>

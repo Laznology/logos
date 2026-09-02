@@ -29,11 +29,29 @@ const { data: posts, pending } = await useFetch("/api/public/posts", {
   transform: (response: ApiResponse) => response.data || [],
 });
 
+const SITE_NAME = "Logos Publication";
+const SITE_DESCRIPTION =
+  "A clean, distraction-free space for essays, stories, and ideas.";
+
 useSeoMeta({
-  title: "Logos — Minimal Editorial Blog",
-  description:
-    "A clean, distraction-free space for essays, stories, and ideas.",
+  title: `Logos — Minimal Editorial Blog`,
+  description: SITE_DESCRIPTION,
+  ogTitle: `Logos — Minimal Editorial Blog`,
+  ogDescription: SITE_DESCRIPTION,
+  ogType: "website",
+  twitterCard: "summary_large_image",
 });
+
+defineOgImage(
+  "Publication",
+  {
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    author: SITE_NAME,
+    publishedAt: "Essays · Stories · Ideas",
+  },
+  { alt: SITE_NAME }
+);
 </script>
 
 <template>
@@ -46,10 +64,14 @@ useSeoMeta({
       >
         <NuxtLink
           to="/"
-          class="text-highlighted flex items-center gap-2 font-semibold transition hover:opacity-80"
+          class="text-highlighted flex items-center gap-2.5 font-semibold transition hover:opacity-80"
         >
-          <UIcon name="i-lucide-house" class="text-primary size-5" />
-          <span class="text-sm tracking-tight">Home</span>
+          <img
+            src="/favicon.ico"
+            alt="Logos"
+            class="size-5 rounded object-contain"
+          />
+          <span class="text-sm font-bold tracking-tight">Logos</span>
         </NuxtLink>
 
         <div class="flex items-center gap-2">
@@ -76,7 +98,7 @@ useSeoMeta({
             Logos Publication
           </h1>
           <p class="text-muted text-base leading-relaxed">
-            Distraction-free thoughts, essays, and technical writings.
+            Distraction-free thoughts, essays, and stories.
           </p>
         </div>
 

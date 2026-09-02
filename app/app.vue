@@ -3,18 +3,18 @@ useHead({
   htmlAttrs: {
     lang: "en",
   },
-  link: [{ href: "/favicon.ico", rel: "icon" }],
+  link: [
+    { rel: "icon", type: "image/x-icon", href: "/favicon.ico", sizes: "any" },
+  ],
   meta: [{ content: "width=device-width, initial-scale=1", name: "viewport" }],
 });
 
-const title = "Nuxt Editor Template";
-const description =
-  "A Notion-like WYSIWYG editor with AI-powered completions and real-time collaboration in Vue & Nuxt.";
+const title = "Logos Publication";
+const description = "Distraction-free thoughts, essays, and stories.";
 
 useSeoMeta({
   description,
   ogDescription: description,
-  ogImage: "https://ui.nuxt.com/assets/templates/nuxt/editor-light.png",
   ogTitle: title,
   title,
   twitterCard: "summary_large_image",
