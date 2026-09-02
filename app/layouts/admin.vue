@@ -84,14 +84,7 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
       <template #header="{ collapsed }">
         <div class="flex w-full items-center justify-between">
           <div class="flex items-center gap-2">
-            <img
-              src="/favicon.ico"
-              alt="Logos"
-              class="size-6 rounded object-contain"
-            />
-            <span v-if="!collapsed" class="text-highlighted font-semibold">
-              Logos
-            </span>
+            <AppLogo :show-text="!collapsed" />
           </div>
           <UButton
             v-if="!collapsed"

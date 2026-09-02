@@ -7,8 +7,8 @@
     }"
   >
     <template #left>
-      <NuxtLink to="/">
-        <AppLogo class="h-6 w-auto shrink-0" />
+      <NuxtLink to="/" class="transition hover:opacity-80">
+        <AppLogo />
       </NuxtLink>
 
       <TemplateMenu />

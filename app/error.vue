@@ -52,16 +52,8 @@ const handleClearError = () => {
         <div
           class="mx-auto flex h-14 max-w-4xl items-center justify-between px-6"
         >
-          <NuxtLink
-            to="/"
-            class="text-highlighted flex items-center gap-2 font-semibold transition hover:opacity-80"
-          >
-            <img
-              src="/favicon.ico"
-              alt="Logos"
-              class="size-5 rounded object-contain"
-            />
-            <span class="text-sm font-bold tracking-tight">Logos</span>
+          <NuxtLink to="/" class="transition hover:opacity-80">
+            <AppLogo />
           </NuxtLink>
 
           <UButton

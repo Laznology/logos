@@ -39,6 +39,9 @@ importers:
       '@tailwindcss/typography':
         specifier: ^0.5.20
         version: 0.5.20(tailwindcss@4.3.3)
+      '@takumi-rs/core':
+        specifier: ^2.13.3
+        version: 2.13.3(csstype@3.2.3)
       '@takumi-rs/wasm':
         specifier: ^2.13.3
         version: 2.13.3(csstype@3.2.3)
@@ -10944,7 +10947,6 @@ snapshots:
     transitivePeerDependencies:
       - preact
       - react
-    optional: true
 
   '@takumi-rs/helpers@2.13.3': {}
 

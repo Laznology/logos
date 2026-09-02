@@ -3,7 +3,7 @@ const isCloudflarePreset = nitroPreset.startsWith("cloudflare");
 const NOINDEX_ROBOTS = "noindex, nofollow";
 export default defineNuxtConfig({
   compatibilityDate: "2026-06-30",
-
+  ssr: true,
   css: ["~/assets/css/main.css"],
 
   devtools: {
