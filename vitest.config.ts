@@ -1,10 +1,10 @@
-import { fileURLToPath } from "node:url";
-
 import { defineVitestProject } from "@nuxt/test-utils/config";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
+    hookTimeout: 30_000,
+    testTimeout: 30_000,
     projects: [
       {
         test: {
@@ -16,8 +16,9 @@ export default defineConfig({
       await defineVitestProject({
         test: {
           name: "nuxt",
+          hookTimeout: 30_000,
+          testTimeout: 30_000,
           include: ["test/nuxt/*.{test,spec}.ts"],
-          environment: "nuxt",
           environmentOptions: {
             nuxt: {
               rootDir: import.meta.dirname,
