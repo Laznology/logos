@@ -1,8 +1,16 @@
-import { or, eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { userTable } from "hub:db:schema";
 import * as v from "valibot";
+import { siteSettingsService } from "~~/server/services/settings.service";
 
 export default defineEventHandler(async (event) => {
+  const settings = await siteSettingsService.get();
+  if (!settings.registrationEnabled) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: "Registration is disabled",
+    });
+  }
   const body = await readValidatedBody(event, (data) =>
     v.parse(signUpSchema, data)
   );

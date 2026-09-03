@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from "@nuxt/ui";
 import { FetchError } from "ofetch";
+import type { SiteSettings } from "~~/shared/types/settings";
 
 definePageMeta({
   middleware: "guest",
@@ -11,6 +12,13 @@ const { $csrfFetch } = useNuxtApp();
 const { fetch: refreshSession } = useUserSession();
 const toast = useToast();
 const isLoading = ref(false);
+
+const { data: siteSettings } = await useFetch<SiteSettings>(
+  "/api/public/settings",
+  {
+    key: "public-site-settings",
+  }
+);
 
 const fields = [
   {
@@ -71,25 +79,14 @@ async function onSubmit(event: FormSubmitEvent<SignInType>) {
 
 <template>
   <div class="bg-elevated/50 flex min-h-screen items-center justify-center p-4">
-    <UAuthForm
-      title="Sign in to Logos"
-      description="Enter your credentials or use a social provider to access your workspace."
-      icon="i-lucide-lock"
-      :fields="fields"
-      :providers="providers"
-      :schema="signInSchema"
-      :loading="isLoading"
-      submit-button-label="Sign In"
-      class="w-full max-w-md"
-      @submit="onSubmit"
-    >
+    <UAuthForm title="Sign in to Logos"
+      description="Enter your credentials or use a social provider to access your workspace." icon="i-lucide-lock"
+      :fields="fields" :providers="providers" :schema="signInSchema" :loading="isLoading" submit-button-label="Sign In"
+      class="w-full max-w-md" @submit="onSubmit">
       <template #footer>
-        <p class="text-muted text-center text-xs">
+        <p v-if="siteSettings?.registrationEnabled !== false" class="text-muted text-center text-xs">
           Don't have an account?
-          <NuxtLink
-            to="/register"
-            class="text-primary font-medium hover:underline"
-          >
+          <NuxtLink to="/register" class="text-primary font-medium hover:underline">
             Sign Up
           </NuxtLink>
         </p>

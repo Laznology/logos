@@ -1,14 +1,12 @@
 import { eq } from "drizzle-orm";
 import { db } from "hub:db";
 import { siteSettingsTable } from "hub:db:schema";
-import {
-  DEFAULT_SITE_SETTINGS,
-  type SiteSettings,
-} from "~~/shared/types/settings";
+import type { SiteSettings } from "~~/shared/types/settings";
+import { DEFAULT_SITE_SETTINGS } from "~~/shared/types/settings";
 
 const SITE_SETTINGS_ID = 1;
 
-class SiteSettingsService {
+export const siteSettingsService = {
   async get(): Promise<SiteSettings> {
     await db
       .insert(siteSettingsTable)
@@ -32,7 +30,7 @@ class SiteSettingsService {
       graphEnabledByDefault: row.graphEnabledByDefault,
       registrationEnabled: row.registrationEnabled,
     };
-  }
+  },
 
   async update(settings: SiteSettings): Promise<SiteSettings> {
     const [row] = await db
@@ -58,7 +56,5 @@ class SiteSettingsService {
     });
 
     return settings;
-  }
-}
-
-export const siteSettingsService = new SiteSettingsService();
+  },
+};
