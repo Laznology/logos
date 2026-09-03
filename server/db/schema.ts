@@ -31,6 +31,21 @@ export const userTable = sqliteTable(
   ]
 );
 
+export const siteSettingsTable = sqliteTable("site_settings", {
+  id: integer("id").primaryKey().default(1),
+  graphEnabledByDefault: integer("graph_enabled_by_default", {
+    mode: "boolean",
+  })
+    .notNull()
+    .default(true),
+  registrationEnabled: integer("registration_enabled", { mode: "boolean" })
+    .notNull()
+    .default(true),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
 export const postTable = sqliteTable(
   "posts",
   {
