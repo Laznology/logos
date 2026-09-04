@@ -160,6 +160,20 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => [
       target: "_blank",
     },
   ],
+  [
+    {
+      label: "Open graph",
+      icon: "i-lucide-share-2",
+      onSelect: () => {
+        graphOpen.value = true;
+      },
+    },
+    {
+      label: colorMode.value === "dark" ? "Use light theme" : "Use dark theme",
+      icon: colorMode.value === "dark" ? "i-lucide-sun" : "i-lucide-moon",
+      onSelect: () => toggleTheme(),
+    },
+  ],
 ]);
 
 const scrollToHeading = (item: { id: string }) => {
@@ -252,29 +266,33 @@ useSchemaOrg(
     <div class="bg-primary fixed top-0 left-0 z-50 h-1 transition-all duration-150 ease-out"
       :style="{ width: `${readingProgress}%` }" />
     <header class="bg-default/80 sticky top-0 z-30 backdrop-blur-md">
-      <div class="mx-auto flex h-14 max-w-7xl items-center justify-between px-6">
-        <UBreadcrumb :items="breadcrumbItems" class="text-sm">
+      <div class="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-4 sm:px-6">
+        <UBreadcrumb :items="breadcrumbItems" class="min-w-0 flex-1 text-sm">
           <template #separator>
             <span class="text-muted px-1">/</span>
           </template>
         </UBreadcrumb>
 
-        <div class="flex items-center gap-2">
-          <UFieldGroup v-if="post">
+        <div class="flex shrink-0 items-center gap-1 sm:gap-2">
+          <UFieldGroup v-if="post" class="hidden sm:flex">
             <UButton variant="outline" color="neutral" size="sm" icon="i-lucide-clipboard" label="Copy page"
               @click="copyPageAsMarkdown" />
             <UDropdownMenu :items="dropdownItems">
               <UButton variant="outline" color="neutral" size="sm" icon="i-lucide-chevron-down" />
             </UDropdownMenu>
           </UFieldGroup>
-          <UButton v-if="post" variant="soft" color="neutral" size="sm" icon="i-lucide-share-2" label="Graph"
-            @click="graphOpen = true" />
+          <UButton v-if="post" class="hidden sm:inline-flex" variant="soft" color="neutral" size="sm"
+            icon="i-lucide-share-2" label="Graph" @click="graphOpen = true" />
 
           <UButton variant="ghost" color="neutral" size="sm" icon="i-lucide-search" aria-label="Search articles"
             @click="commandPaletteOpen = true" />
 
           <UButton variant="ghost" color="neutral" size="sm" :icon="colorMode.value === 'dark' ? 'i-lucide-moon' : 'i-lucide-sun'
-            " aria-label="Toggle theme" @click="toggleTheme" />
+            " aria-label="Toggle theme" class="hidden sm:inline-flex" @click="toggleTheme" />
+
+          <UDropdownMenu v-if="post" :items="dropdownItems" class="sm:hidden">
+            <UButton variant="ghost" color="neutral" size="sm" icon="i-lucide-ellipsis" aria-label="More actions" />
+          </UDropdownMenu>
         </div>
       </div>
     </header>
