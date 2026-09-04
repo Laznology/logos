@@ -24,11 +24,12 @@ interface GraphPost {
 const INTERNAL_LINK = /\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]/g;
 
 export function buildPostGraph(posts: GraphPost[]): PostGraph {
-  const nodes = posts
+  const allNodes = posts
     .map(({ id, slug, title }) => ({ id, slug, title: title || "Untitled" }))
     .toSorted((a, b) => a.slug.localeCompare(b.slug));
-  const bySlug = new Map(nodes.map((node) => [node.slug, node]));
+  const bySlug = new Map(allNodes.map((node) => [node.slug, node]));
   const edgeSet = new Set<string>();
+  const linkedNodeIds = new Set<string>();
 
   for (const post of posts) {
     const source = bySlug.get(post.slug);
@@ -42,13 +43,15 @@ export function buildPostGraph(posts: GraphPost[]): PostGraph {
     for (const match of text.matchAll(INTERNAL_LINK)) {
       const target = bySlug.get(match[1]?.trim() || "");
       if (target && target.id !== source.id) {
+        linkedNodeIds.add(source.id);
+        linkedNodeIds.add(target.id);
         edgeSet.add(`${source.id}:${target.id}`);
       }
     }
   }
 
   return {
-    nodes,
+    nodes: allNodes.filter((node) => linkedNodeIds.has(node.id)),
     edges: [...edgeSet]
       .map((key) => {
         const [source, target] = key.split(":");
