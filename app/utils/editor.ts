@@ -142,6 +142,11 @@ export const editorSuggestionItems: EditorSuggestionMenuItem[][] = [
       icon: "i-lucide-image",
     },
     {
+      kind: "carouselSeparator",
+      label: "Slide",
+      icon: "i-lucide-panel-top",
+    },
+    {
       kind: "table",
       label: "Table",
       icon: "i-lucide-table",
