@@ -9,11 +9,11 @@ const { showText = true, size = "md" } = defineProps<{
   <div
     class="inline-flex items-center gap-2.5 leading-none font-semibold select-none"
   >
-    <img
-      src="/apple-touch-icon.png"
-      alt="Logos"
+    <span
+      aria-hidden="true"
+      style="view-transition-name: logo-mark"
       :class="[
-        'shrink-0 rounded-md object-contain',
+        'bg-primary app-logo-mark shrink-0 rounded-md',
         size === 'sm' ? 'size-6' : size === 'lg' ? 'size-10' : 'size-8',
       ]"
     />

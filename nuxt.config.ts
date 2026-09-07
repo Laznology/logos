@@ -45,9 +45,19 @@ export default defineNuxtConfig({
   ogImage: {
     enabled: true,
     compatibility: {
-      runtime: {
-        takumi: isCloudflarePreset ? "wasm" : "node",
-      },
+      runtime: isCloudflarePreset
+        ? {
+            browser: "cloudflare",
+            resvg: "wasm",
+            satori: "wasm",
+            takumi: "wasm",
+            sharp: false,
+            emoji: "fetch",
+          }
+        : { takumi: "node" },
+      prerender: isCloudflarePreset
+        ? { takumi: "wasm" }
+        : { takumi: "node-dev" },
     },
     defaults: {
       width: 1200,

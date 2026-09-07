@@ -64,7 +64,7 @@ const {
   error: listError,
   pending: listPending,
 } = useFetch<PostListType>("/api/posts", {
-  key: "admin-command-palette-posts",
+  key: "studio-command-palette-posts",
   default: () => [],
 });
 
@@ -81,7 +81,7 @@ const {
   error: searchError,
   pending: searchPending,
 } = useAsyncData<PostSearchListType>(
-  "admin-command-palette-search",
+  "studio-command-palette-search",
   () => {
     if (!searchEnabled.value) {
       return Promise.resolve([]);
@@ -134,7 +134,7 @@ const groups = computed<CommandPaletteGroup[]>(() =>
       post,
       onSelect: () => {
         open.value = false;
-        navigateTo(`/admin/posts/${post.slug}`);
+        navigateTo(`/studio/posts/${post.slug}`);
       },
     })),
   }))

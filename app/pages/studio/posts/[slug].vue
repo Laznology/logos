@@ -1,10 +1,10 @@
 <script setup lang="ts">
 definePageMeta({
-  layout: "admin",
+  layout: "studio",
   middleware: "auth",
 });
 </script>
 
 <template>
-  <AdminPostEditorPage />
+  <StudioPostEditorPage />
 </template>

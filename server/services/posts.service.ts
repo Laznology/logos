@@ -163,6 +163,7 @@ class PostService {
     let slug = baseSlug;
     let counter = 1;
     while (true) {
+      // eslint-disable-next-line no-await-in-loop
       const [existing] = await this.database
         .select({ id: postTable.id })
         .from(postTable)
@@ -171,7 +172,8 @@ class PostService {
       if (!existing) {
         break;
       }
-      slug = `${baseSlug}-${counter++}`;
+      slug = `${baseSlug}-${counter}`;
+      counter += 1;
     }
     const content =
       !input?.content || input.content === ""

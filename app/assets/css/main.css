@@ -6,6 +6,11 @@
   --font-sans: "Public Sans", sans-serif;
 }
 
+.app-logo-mark {
+  -webkit-mask: url("/apple-touch-icon.png") center / contain no-repeat;
+  mask: url("/apple-touch-icon.png") center / contain no-repeat;
+}
+
 :root {
   --ui-bg: white;
 }

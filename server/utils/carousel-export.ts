@@ -2,11 +2,8 @@ import type { Renderer as TakumiRenderer } from "@takumi-rs/wasm";
 import type { JSONContent } from "@tiptap/core";
 import { zipSync } from "fflate";
 
-import {
-  CAROUSEL_HEIGHT,
-  CAROUSEL_WIDTH,
-  type CarouselFrame,
-} from "../../shared/types/carousel";
+import { CAROUSEL_HEIGHT, CAROUSEL_WIDTH } from "../../shared/types/carousel";
+import type { CarouselFrame } from "../../shared/types/carousel";
 
 type Style = Record<string, string | number>;
 type RenderNode =
@@ -33,9 +30,15 @@ function inlineNodes(content: JSONContent[] = []): RenderNode[] {
 
     const style: Style = {};
     for (const mark of node.marks || []) {
-      if (mark.type === "bold") style.fontWeight = 700;
-      if (mark.type === "italic") style.fontStyle = "italic";
-      if (mark.type === "strike") style.textDecoration = "line-through";
+      if (mark.type === "bold") {
+        style.fontWeight = 700;
+      }
+      if (mark.type === "italic") {
+        style.fontStyle = "italic";
+      }
+      if (mark.type === "strike") {
+        style.textDecoration = "line-through";
+      }
       if (mark.type === "textStyle" && mark.attrs?.color) {
         style.color = String(mark.attrs.color);
       }
@@ -94,7 +97,10 @@ function resolveImageSource(src: string, origin: string): string {
   if (!src || src.startsWith("http://") || src.startsWith("https://")) {
     return src;
   }
-  return `${origin}${src.startsWith("/") ? src : `/${src}`}`;
+  if (src.startsWith("/")) {
+    return `${origin}${src}`;
+  }
+  return `${origin}/${src}`;
 }
 
 function frameNode(frame: CarouselFrame, origin: string): RenderNode {
@@ -169,20 +175,21 @@ export async function renderCarouselFrames(
     const wasm = await import("@takumi-rs/wasm");
     renderer = new wasm.Renderer();
   }
-  const images: Uint8Array[] = [];
-  for (const frame of frames) {
-    const rendered = await renderer.render(frameNode(frame, origin), {
-      width: CAROUSEL_WIDTH,
-      height: CAROUSEL_HEIGHT,
-      format: "png",
-    });
-    images.push(new Uint8Array(rendered));
-  }
+  const images = await Promise.all(
+    frames.map(async (frame) => {
+      const rendered = await renderer.render(frameNode(frame, origin), {
+        width: CAROUSEL_WIDTH,
+        height: CAROUSEL_HEIGHT,
+        format: "png",
+      });
+      return new Uint8Array(rendered);
+    })
+  );
   return images;
 }
 
 export function createCarouselZip(
-  files: Array<{ name: string; data: Uint8Array }>
+  files: { name: string; data: Uint8Array }[]
 ): Uint8Array {
   const archive = Object.fromEntries(
     files.map(({ name, data }) => [

@@ -2,9 +2,12 @@
 import type { BreadcrumbItem, NavigationMenuItem } from "@nuxt/ui";
 
 const FILE_ICON = "i-lucide-file-text";
-const ADMIN_POSTS_PATH = "/admin";
+const ADMIN_POSTS_PATH = "/studio";
 const route = useRoute();
-const isCommandPaletteOpen = ref(false);
+const isCommandPaletteOpen = useState(
+  "studio-command-palette-open",
+  () => false
+);
 const isSettingsOpen = ref(false);
 
 const colorMode = useColorMode();
@@ -38,7 +41,7 @@ const isCollapsed = useCookie<boolean>("admin_sidebar_collapsed", {
 });
 
 const { data: sidebarPosts } = await useFetch<PostListType>("/api/posts", {
-  key: "admin-sidebar-posts",
+  key: "studio-sidebar-posts",
   default: () => [],
 });
 
@@ -46,7 +49,7 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
   const recentPosts = (sidebarPosts.value || []).slice(0, 10).map((post) => ({
     label: post.title || "Untitled",
     icon: FILE_ICON,
-    to: `/admin/posts/${post.slug}`,
+    to: `/studio/posts/${post.slug}`,
   }));
 
   return [
@@ -178,7 +181,7 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
       </main>
     </UDashboardPanel>
 
-    <AdminPostCommandPalette v-model:open="isCommandPaletteOpen" />
-    <AdminAccountSettings v-model:open="isSettingsOpen" />
+    <StudioPostCommandPalette v-model:open="isCommandPaletteOpen" />
+    <StudioAccountSettings v-model:open="isSettingsOpen" />
   </UDashboardGroup>
 </template>

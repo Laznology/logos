@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BreadcrumbItem, DropdownMenuItem } from "@nuxt/ui";
+import type { DropdownMenuItem } from "@nuxt/ui";
 
 import type { PostGraph } from "#shared/types/graph";
 import GraphView from "~/components/GraphView.vue";
@@ -89,11 +89,6 @@ const wordCountText = computed(() => {
   const count = post.value?.wordCount || 0;
   return `${count} ${count === 1 ? "word" : "words"}`;
 });
-
-const breadcrumbItems = computed<BreadcrumbItem[]>(() => [
-  { label: "Logos", avatar: { src: "/apple-touch-icon.png" }, to: "/" },
-  { label: post.value?.title || "Untitled" },
-]);
 
 const readingTimeText = computed(() => {
   const time = post.value?.readingTime || 1;
@@ -238,9 +233,9 @@ defineOgImage(
     publishedAt: () =>
       post.value?.createdAt
         ? new Intl.DateTimeFormat("en", {
-          month: "long",
-          year: "numeric",
-        }).format(new Date(post.value.createdAt))
+            month: "long",
+            year: "numeric",
+          }).format(new Date(post.value.createdAt))
         : undefined,
   },
   {
@@ -262,36 +257,86 @@ useSchemaOrg(
 </script>
 
 <template>
-  <div class="bg-default text-default selection:bg-primary/20 flex min-h-screen flex-col">
-    <div class="bg-primary fixed top-0 left-0 z-50 h-1 transition-all duration-150 ease-out"
-      :style="{ width: `${readingProgress}%` }" />
+  <div
+    class="bg-default text-default selection:bg-primary/20 flex min-h-screen flex-col"
+  >
+    <div
+      class="bg-primary fixed top-0 left-0 z-50 h-1 transition-all duration-150 ease-out"
+      :style="{ width: `${readingProgress}%` }"
+    />
     <header class="bg-default/80 sticky top-0 z-30 backdrop-blur-md">
-      <div class="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-4 sm:px-6">
-        <UBreadcrumb :items="breadcrumbItems" class="min-w-0 flex-1 text-sm">
-          <template #separator>
-            <span class="text-muted px-1">/</span>
-          </template>
-        </UBreadcrumb>
+      <div
+        class="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-4 sm:px-6"
+      >
+        <div class="flex min-w-0 flex-1 items-center gap-2 text-sm">
+          <NuxtLink to="/" class="shrink-0 transition hover:opacity-80">
+            <AppLogo :show-text="false" size="sm" />
+          </NuxtLink>
+          <span class="text-muted select-none">/</span>
+          <span class="text-muted min-w-0 truncate">{{
+            post?.title || "Untitled"
+          }}</span>
+        </div>
 
         <div class="flex shrink-0 items-center gap-1 sm:gap-2">
           <UFieldGroup v-if="post" class="hidden sm:flex">
-            <UButton variant="outline" color="neutral" size="sm" icon="i-lucide-clipboard" label="Copy page"
-              @click="copyPageAsMarkdown" />
+            <UButton
+              variant="outline"
+              color="neutral"
+              size="sm"
+              icon="i-lucide-clipboard"
+              label="Copy page"
+              @click="copyPageAsMarkdown"
+            />
             <UDropdownMenu :items="dropdownItems">
-              <UButton variant="outline" color="neutral" size="sm" icon="i-lucide-chevron-down" />
+              <UButton
+                variant="outline"
+                color="neutral"
+                size="sm"
+                icon="i-lucide-chevron-down"
+              />
             </UDropdownMenu>
           </UFieldGroup>
-          <UButton v-if="post" class="hidden sm:inline-flex" variant="soft" color="neutral" size="sm"
-            icon="i-lucide-share-2" label="Graph" @click="graphOpen = true" />
+          <UButton
+            v-if="post"
+            class="hidden sm:inline-flex"
+            variant="soft"
+            color="neutral"
+            size="sm"
+            icon="i-lucide-share-2"
+            label="Graph"
+            @click="graphOpen = true"
+          />
 
-          <UButton variant="ghost" color="neutral" size="sm" icon="i-lucide-search" aria-label="Search articles"
-            @click="commandPaletteOpen = true" />
+          <UButton
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            icon="i-lucide-search"
+            aria-label="Search articles"
+            @click="commandPaletteOpen = true"
+          />
 
-          <UButton variant="ghost" color="neutral" size="sm" :icon="colorMode.value === 'dark' ? 'i-lucide-moon' : 'i-lucide-sun'
-            " aria-label="Toggle theme" class="hidden sm:inline-flex" @click="toggleTheme" />
+          <UButton
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            :icon="
+              colorMode.value === 'dark' ? 'i-lucide-moon' : 'i-lucide-sun'
+            "
+            aria-label="Toggle theme"
+            class="hidden sm:inline-flex"
+            @click="toggleTheme"
+          />
 
           <UDropdownMenu v-if="post" :items="dropdownItems" class="sm:hidden">
-            <UButton variant="ghost" color="neutral" size="sm" icon="i-lucide-ellipsis" aria-label="More actions" />
+            <UButton
+              variant="ghost"
+              color="neutral"
+              size="sm"
+              icon="i-lucide-ellipsis"
+              aria-label="More actions"
+            />
           </UDropdownMenu>
         </div>
       </div>
@@ -310,10 +355,15 @@ useSchemaOrg(
         <USkeleton class="bg-muted mt-8 h-96 w-full rounded-lg" />
       </div>
 
-      <div v-else-if="error || !post"
-        class="mx-auto flex max-w-3xl flex-col items-center justify-center px-6 py-32 text-center">
-        <UEmpty icon="i-lucide-file-x" title="Post not available"
-          description="This post doesn't exist or is currently kept as a private draft.">
+      <div
+        v-else-if="error || !post"
+        class="mx-auto flex max-w-3xl flex-col items-center justify-center px-6 py-32 text-center"
+      >
+        <UEmpty
+          icon="i-lucide-file-x"
+          title="Post not available"
+          description="This post doesn't exist or is currently kept as a private draft."
+        >
           <template #actions>
             <UButton to="/" icon="i-lucide-house"> Go to Home </UButton>
           </template>
@@ -321,22 +371,34 @@ useSchemaOrg(
       </div>
 
       <div v-else class="relative">
-        <div class="mx-auto grid max-w-7xl gap-10 px-6 py-12 sm:py-16 xl:grid-cols-[12rem_minmax(0,1fr)_20rem]">
+        <div
+          class="mx-auto grid max-w-7xl gap-10 px-6 py-12 sm:py-16 xl:grid-cols-[12rem_minmax(0,1fr)_20rem]"
+        >
           <aside v-if="post.headings?.length" class="hidden xl:block">
             <div class="sticky top-24">
-              <span class="text-muted mb-4 block text-xs font-bold tracking-widest uppercase">On this page</span>
+              <span
+                class="text-muted mb-4 block text-xs font-bold tracking-widest uppercase"
+                >On this page</span
+              >
               <nav class="border-default border-l text-sm">
-                <button v-for="item in post.headings" :key="item.id" type="button"
+                <button
+                  v-for="item in post.headings"
+                  :key="item.id"
+                  type="button"
                   class="-ml-px block w-full cursor-pointer border-l-2 py-1 text-left transition-colors duration-200"
-                  :class="activeHeadingId === item.id
-                    ? 'border-primary text-primary font-medium'
-                    : 'text-muted hover:text-highlighted hover:border-muted border-transparent'
-                    " :style="{
-                      paddingLeft: `${(item.level - 1) * 0.75 + 0.875}rem`,
-                    }" @click="scrollToHeading(item)">
+                  :class="
+                    activeHeadingId === item.id
+                      ? 'border-primary text-primary font-medium'
+                      : 'text-muted hover:text-highlighted hover:border-muted border-transparent'
+                  "
+                  :style="{
+                    paddingLeft: `${(item.level - 1) * 0.75 + 0.875}rem`,
+                  }"
+                  @click="scrollToHeading(item)"
+                >
                   <span class="line-clamp-2 leading-relaxed">{{
                     item.text
-                    }}</span>
+                  }}</span>
                 </button>
               </nav>
             </div>
@@ -344,72 +406,144 @@ useSchemaOrg(
 
           <article class="w-full">
             <header class="mb-8 space-y-4">
-              <h1 class="text-highlighted text-4xl leading-tight font-extrabold tracking-tight sm:text-5xl">
+              <h1
+                :style="{ viewTransitionName: `post-title-${slug}` }"
+                class="text-highlighted text-4xl leading-tight font-extrabold tracking-tight sm:text-5xl"
+              >
                 {{ post.title || "Untitled" }}
               </h1>
-              <div class="border-default text-muted flex flex-wrap items-center gap-x-3 gap-y-2 border-b pb-6 text-sm">
+              <div
+                class="border-default text-muted flex flex-wrap items-center gap-x-3 gap-y-2 border-b pb-6 text-sm"
+              >
                 <div class="flex items-center gap-2">
-                  <UAvatar v-if="post.author?.avatar" :src="post.author.avatar" :alt="post.author.name || 'Author'"
-                    size="sm" />
-                  <UAvatar v-else icon="i-lucide-user" size="sm" color="neutral" />
+                  <UAvatar
+                    v-if="post.author?.avatar"
+                    :src="post.author.avatar"
+                    :alt="post.author.name || 'Author'"
+                    size="sm"
+                  />
+                  <UAvatar
+                    v-else
+                    icon="i-lucide-user"
+                    size="sm"
+                    color="neutral"
+                  />
                   <span class="text-highlighted font-medium">{{
                     post.author?.name || "Author"
-                    }}</span>
+                  }}</span>
                 </div>
                 <span class="opacity-40">•</span>
-                <NuxtTime :datetime="post.createdAt" locale="en-US" month="long" day="numeric" year="numeric" />
-                <span class="opacity-40">•</span><span>{{ wordCountText }}</span>
-                <span class="opacity-40">•</span><span>{{ readingTimeText }}</span>
+                <NuxtTime
+                  :datetime="post.createdAt"
+                  locale="en-US"
+                  month="long"
+                  day="numeric"
+                  year="numeric"
+                />
+                <span class="opacity-40">•</span
+                ><span>{{ wordCountText }}</span>
+                <span class="opacity-40">•</span
+                ><span>{{ readingTimeText }}</span>
               </div>
 
-              <div v-if="post.tags && post.tags.length > 0" class="flex flex-wrap items-center gap-1.5 pt-1">
-                <NuxtLink v-for="tag in post.tags" :key="tag" :to="`/?tag=${encodeURIComponent(tag)}`"
-                  class="border-default bg-elevated/40 text-muted hover:border-primary/40 hover:text-primary inline-flex cursor-pointer items-center gap-0.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition">
+              <div
+                v-if="post.tags && post.tags.length > 0"
+                class="flex flex-wrap items-center gap-1.5 pt-1"
+              >
+                <NuxtLink
+                  v-for="tag in post.tags"
+                  :key="tag"
+                  :to="`/?tag=${encodeURIComponent(tag)}`"
+                  class="border-default bg-elevated/40 text-muted hover:border-primary/40 hover:text-primary inline-flex cursor-pointer items-center gap-0.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition"
+                >
                   <span class="text-primary/70 font-semibold">#</span>{{ tag }}
                 </NuxtLink>
               </div>
             </header>
 
-            <div v-if="post.headings?.length"
-              class="border-default bg-default/80 sticky top-[3.5rem] z-20 -mx-6 mb-10 border-b px-6 py-4 backdrop-blur-md xl:hidden">
+            <div
+              v-if="post.headings?.length"
+              class="border-default bg-default/80 sticky top-[3.5rem] z-20 -mx-6 mb-10 border-b px-6 py-4 backdrop-blur-md xl:hidden"
+            >
               <details class="group">
                 <summary
-                  class="text-highlighted flex cursor-pointer items-center justify-between text-sm font-semibold">
+                  class="text-highlighted flex cursor-pointer items-center justify-between text-sm font-semibold"
+                >
                   Table of Contents
-                  <UIcon name="i-lucide-chevron-down" class="size-4 transition-transform group-open:rotate-180" />
+                  <UIcon
+                    name="i-lucide-chevron-down"
+                    class="size-4 transition-transform group-open:rotate-180"
+                  />
                 </summary>
                 <nav class="mt-3 space-y-1.5 text-sm">
-                  <button v-for="item in post.headings" :key="item.id" type="button"
-                    class="block w-full cursor-pointer text-left transition-colors" :class="activeHeadingId === item.id
-                      ? 'text-primary font-medium'
-                      : 'text-muted hover:text-highlighted'
-                      " :style="{ paddingLeft: `${(item.level - 1) * 1}rem` }" @click="scrollToHeading(item)">
+                  <button
+                    v-for="item in post.headings"
+                    :key="item.id"
+                    type="button"
+                    class="block w-full cursor-pointer text-left transition-colors"
+                    :class="
+                      activeHeadingId === item.id
+                        ? 'text-primary font-medium'
+                        : 'text-muted hover:text-highlighted'
+                    "
+                    :style="{ paddingLeft: `${(item.level - 1) * 1}rem` }"
+                    @click="scrollToHeading(item)"
+                  >
                     <span class="line-clamp-2 leading-relaxed">{{
                       item.text
-                      }}</span>
+                    }}</span>
                   </button>
                 </nav>
               </details>
             </div>
-            <div class="prose prose-lg dark:prose-invert max-w-none" v-html="post.content" />
+            <div
+              class="prose prose-lg dark:prose-invert max-w-none"
+              v-html="post.content"
+            />
             <AppFooter class="mt-16" />
           </article>
 
-          <aside v-if="siteSettings?.graphEnabledByDefault !== false" class="hidden xl:block">
+          <aside
+            v-if="siteSettings?.graphEnabledByDefault !== false"
+            class="hidden xl:block"
+          >
             <div class="sticky top-24">
               <div class="mb-3 flex items-center justify-between">
-                <span class="text-muted text-xs font-bold tracking-widest uppercase">Graph</span>
-                <UButton icon="i-lucide-maximize-2" size="xs" color="neutral" variant="ghost" aria-label="Expand graph"
-                  @click="graphOpen = true" />
+                <span
+                  class="text-muted text-xs font-bold tracking-widest uppercase"
+                  >Graph</span
+                >
+                <UButton
+                  icon="i-lucide-maximize-2"
+                  size="xs"
+                  color="neutral"
+                  variant="ghost"
+                  aria-label="Expand graph"
+                  @click="graphOpen = true"
+                />
               </div>
-              <GraphView v-if="graph" :graph="graph" :active-slug="slug" @select="navigateTo(`/posts/${$event}`)" />
+              <GraphView
+                v-if="graph"
+                :graph="graph"
+                :active-slug="slug"
+                @select="navigateTo(`/posts/${$event}`)"
+              />
             </div>
           </aside>
         </div>
       </div>
-      <UModal v-model:open="graphOpen" title="Post graph" :ui="{ content: 'sm:max-w-5xl' }">
+      <UModal
+        v-model:open="graphOpen"
+        title="Post graph"
+        :ui="{ content: 'sm:max-w-5xl' }"
+      >
         <template #body>
-          <GraphView v-if="graph" :graph="graph" :active-slug="slug" @select="navigateTo(`/posts/${$event}`)" />
+          <GraphView
+            v-if="graph"
+            :graph="graph"
+            :active-slug="slug"
+            @select="navigateTo(`/posts/${$event}`)"
+          />
         </template>
       </UModal>
       <PublicCommandPalette v-model:open="commandPaletteOpen" />

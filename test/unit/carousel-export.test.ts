@@ -24,7 +24,9 @@ describe("carousel ZIP export", () => {
       ""
     );
 
-    expect([...png.slice(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+    expect([...png.slice(0, 8)]).toEqual([
+      137, 80, 78, 71, 13, 10, 26, 10,
+    ]);
   });
 
   it("renders a slide frame with body content", async () => {
@@ -48,6 +50,8 @@ describe("carousel ZIP export", () => {
       ],
       ""
     );
-    expect([...png.slice(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+    expect([...png.slice(0, 8)]).toEqual([
+      137, 80, 78, 71, 13, 10, 26, 10,
+    ]);
   });
 });

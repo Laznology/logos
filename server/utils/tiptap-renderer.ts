@@ -76,6 +76,23 @@ const ImageUploadExtension = Node.create({
     return ["div", { "data-type": "imageUpload" }];
   },
 });
+const CarouselSeparatorExtension = Node.create({
+  name: "carouselSeparator",
+  group: "block",
+  atom: true,
+  parseHTML() {
+    return [{ tag: 'div[data-type="carousel-separator"]' }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, {
+        "data-type": "carousel-separator",
+        class: "hidden",
+      }),
+    ];
+  },
+});
 
 const rendererExtensions: Extensions = [
   StarterKit.configure({
@@ -98,6 +115,7 @@ const rendererExtensions: Extensions = [
   Highlight.configure({ multicolor: true }),
   TextStyle,
   Color,
+  CarouselSeparatorExtension,
 ];
 
 function getNodeText(node: JSONContent): string {

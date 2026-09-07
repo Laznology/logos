@@ -8,7 +8,6 @@ const isCollapsed = useCookie<boolean>("admin_sidebar_collapsed", {
   default: () => false,
 });
 const { user } = useUserSession();
-const isAdmin = computed(() => user.value?.role === "admin");
 const toast = useToast();
 const { $csrfFetch } = useNuxtApp();
 
@@ -18,18 +17,23 @@ const themeOptions = [
   { label: "Dark", value: "dark", icon: "i-lucide-moon" },
 ];
 
+async function fetchSettings() {
+  try {
+    return await globalThis.$fetch<SiteSettings>("/api/studio/settings");
+  } catch {
+    return null;
+  }
+}
+
 const {
   data: siteSettings,
   pending: settingsPending,
   error: settingsError,
   refresh: refreshSettings,
-} = useAsyncData<SiteSettings | null>(
-  "admin-site-settings",
-  () =>
-    isAdmin.value
-      ? $fetch<SiteSettings>("/api/admin/settings")
-      : Promise.resolve(null),
-  { watch: [isAdmin] }
+} = useAsyncData<SiteSettings | null>("studio-site-settings", fetchSettings);
+
+const isAdmin = computed(
+  () => user.value?.role === "admin" || Boolean(siteSettings.value)
 );
 
 const workspaceForm = reactive<SiteSettings>({
@@ -54,7 +58,7 @@ async function saveWorkspaceSettings() {
   isSavingSettings.value = true;
   saveError.value = "";
   try {
-    await $csrfFetch<SiteSettings>("/api/admin/settings", {
+    await $csrfFetch<SiteSettings>("/api/studio/settings", {
       method: "PUT",
       body: workspaceForm,
     });
@@ -75,8 +79,12 @@ async function saveWorkspaceSettings() {
   <div class="max-w-xl space-y-8">
     <section class="space-y-3">
       <h3 class="text-highlighted text-sm font-semibold">Theme</h3>
-      <URadioGroup v-model="colorMode.preference" :items="themeOptions" variant="card"
-        :ui="{ fieldset: 'grid grid-cols-3 gap-2' }" />
+      <URadioGroup
+        v-model="colorMode.preference"
+        :items="themeOptions"
+        variant="card"
+        :ui="{ fieldset: 'grid grid-cols-3 gap-2' }"
+      />
     </section>
 
     <section class="space-y-3">
@@ -84,9 +92,11 @@ async function saveWorkspaceSettings() {
       <USwitch v-model="isCollapsed" label="Collapse sidebar by default" />
     </section>
 
-    <section v-if="isAdmin" class="space-y-4 border-t border-default pt-6">
+    <section v-if="isAdmin" class="border-default space-y-4 border-t pt-6">
       <div>
-        <h3 class="text-highlighted text-sm font-semibold">Workspace settings</h3>
+        <h3 class="text-highlighted text-sm font-semibold">
+          Workspace settings
+        </h3>
         <p class="text-muted mt-1 text-xs">
           Defaults applied to public readers and new accounts.
         </p>
@@ -97,19 +107,29 @@ async function saveWorkspaceSettings() {
       </div>
 
       <div class="space-y-4">
-        <USwitch v-model="workspaceForm.graphEnabledByDefault" label="Show graph by default"
+        <USwitch
+          v-model="workspaceForm.graphEnabledByDefault"
+          label="Show graph by default"
           description="Readers can still open it manually when disabled."
-          :disabled="settingsPending || isSavingSettings" />
-        <USwitch v-model="workspaceForm.registrationEnabled" label="Allow public registration"
+          :disabled="settingsPending || isSavingSettings"
+        />
+        <USwitch
+          v-model="workspaceForm.registrationEnabled"
+          label="Allow public registration"
           description="Let new users create an account from the register page."
-          :disabled="settingsPending || isSavingSettings" />
+          :disabled="settingsPending || isSavingSettings"
+        />
       </div>
 
       <p v-if="saveError" class="text-error text-sm" role="alert">
         {{ saveError }}
       </p>
-      <UButton size="sm" :loading="isSavingSettings" :disabled="settingsPending || Boolean(settingsError)"
-        @click="saveWorkspaceSettings">
+      <UButton
+        size="sm"
+        :loading="isSavingSettings"
+        :disabled="settingsPending || Boolean(settingsError)"
+        @click="saveWorkspaceSettings"
+      >
         Save workspace settings
       </UButton>
     </section>

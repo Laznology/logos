@@ -303,6 +303,7 @@ defineOgImage(
           >
             <NuxtLink :to="`/posts/${post.slug}`" class="block space-y-3">
               <h2
+                :style="{ viewTransitionName: `post-title-${post.slug}` }"
                 class="text-highlighted group-hover:text-primary text-xl font-bold tracking-tight transition sm:text-2xl"
                 v-html="
                   highlightMatch(post.title || 'Untitled', debouncedSearch)

@@ -5,6 +5,7 @@ test("exports a carousel ZIP from the editor", async ({ page, goto }) => {
   const stamp = Date.now();
   const username = `author_${stamp}`;
   const email = `author_${stamp}@example.com`;
+  // eslint-disable-next-line sonarjs/no-hardcoded-passwords
   const password = "Password123!";
 
   await goto("/register", { waitUntil: "hydration" });

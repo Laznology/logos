@@ -79,14 +79,28 @@ async function onSubmit(event: FormSubmitEvent<SignInType>) {
 
 <template>
   <div class="bg-elevated/50 flex min-h-screen items-center justify-center p-4">
-    <UAuthForm title="Sign in to Logos"
-      description="Enter your credentials or use a social provider to access your workspace." icon="i-lucide-lock"
-      :fields="fields" :providers="providers" :schema="signInSchema" :loading="isLoading" submit-button-label="Sign In"
-      class="w-full max-w-md" @submit="onSubmit">
+    <UAuthForm
+      title="Sign in to Logos"
+      description="Enter your credentials or use a social provider to access your workspace."
+      icon="i-lucide-lock"
+      :fields="fields"
+      :providers="providers"
+      :schema="signInSchema"
+      :loading="isLoading"
+      submit-button-label="Sign In"
+      class="w-full max-w-md"
+      @submit="onSubmit"
+    >
       <template #footer>
-        <p v-if="siteSettings?.registrationEnabled !== false" class="text-muted text-center text-xs">
+        <p
+          v-if="siteSettings?.registrationEnabled !== false"
+          class="text-muted text-center text-xs"
+        >
           Don't have an account?
-          <NuxtLink to="/register" class="text-primary font-medium hover:underline">
+          <NuxtLink
+            to="/register"
+            class="text-primary font-medium hover:underline"
+          >
             Sign Up
           </NuxtLink>
         </p>

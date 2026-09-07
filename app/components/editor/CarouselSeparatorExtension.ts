@@ -34,8 +34,9 @@ const CarouselSeparator = Node.create({
         "data-type": "carousel-separator",
         "aria-label": "Slide separator",
         class:
-          "carousel-separator my-8 h-10 rounded border border-dashed border-primary/40 bg-primary/5",
+          "carousel-separator my-8 flex h-8 items-center justify-center rounded border border-dashed border-primary/40 bg-primary/5 text-xs font-medium text-primary/60 select-none",
       }),
+      "--- Slide Break ---",
     ];
   },
 });

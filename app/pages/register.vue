@@ -88,22 +88,38 @@ async function onSubmit(event: FormSubmitEvent<SignUpType>) {
 </script>
 <template>
   <div class="bg-elevated/50 flex min-h-screen items-center justify-center p-4">
-    <UAuthForm v-if="siteSettings?.registrationEnabled !== false" title="Create an Account"
-      description="Enter your details below to get started with Logos." icon="i-lucide-user-plus" :fields="fields"
-      :providers="providers" :schema="signUpSchema" :loading="isLoading" submit-button-label="Sign Up"
-      class="w-full max-w-md" @submit="onSubmit">
+    <UAuthForm
+      v-if="siteSettings?.registrationEnabled !== false"
+      title="Create an Account"
+      description="Enter your details below to get started with Logos."
+      icon="i-lucide-user-plus"
+      :fields="fields"
+      :providers="providers"
+      :schema="signUpSchema"
+      :loading="isLoading"
+      submit-button-label="Sign Up"
+      class="w-full max-w-md"
+      @submit="onSubmit"
+    >
       <template #footer>
         <p class="text-muted text-center text-xs">
           Already have an account?
-          <NuxtLink to="/login" class="text-primary font-medium hover:underline">
+          <NuxtLink
+            to="/login"
+            class="text-primary font-medium hover:underline"
+          >
             Sign In
           </NuxtLink>
         </p>
       </template>
     </UAuthForm>
 
-    <UEmpty v-else icon="i-lucide-user-round-x" title="Registration is disabled"
-      description="New account registration is currently unavailable.">
+    <UEmpty
+      v-else
+      icon="i-lucide-user-round-x"
+      title="Registration is disabled"
+      description="New account registration is currently unavailable."
+    >
       <template #actions>
         <UButton to="/login" icon="i-lucide-arrow-left">
           Back to sign in

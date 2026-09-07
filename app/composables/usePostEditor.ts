@@ -30,7 +30,7 @@ export const usePostEditor = () => {
     error,
     pending,
   } = useAsyncData<PostApiResponse>(
-    `admin-post-editor-${slug.value}`,
+    `studio-post-editor-${slug.value}`,
     () => requestFetch<PostApiResponse>(`/api/posts/${slug.value}`),
     {
       immediate: !isNew.value,
@@ -70,11 +70,11 @@ export const usePostEditor = () => {
             response.data.slug !== slug.value &&
             import.meta.client
           ) {
-            useRouter().replace(`/admin/posts/${response.data.slug}`);
+            useRouter().replace(`/studio/posts/${response.data.slug}`);
           }
-          refreshNuxtData("admin-sidebar-posts");
-          refreshNuxtData("admin-posts-list-page");
-          refreshNuxtData("admin-command-palette-posts");
+          refreshNuxtData("studio-sidebar-posts");
+          refreshNuxtData("studio-posts-list-page");
+          refreshNuxtData("studio-command-palette-posts");
         }
       } else {
         const previousTitle = postData.value?.data.title;
@@ -104,12 +104,12 @@ export const usePostEditor = () => {
             import.meta.client
           ) {
             post.value.slug = response.data.slug;
-            useRouter().replace(`/admin/posts/${response.data.slug}`);
+            useRouter().replace(`/studio/posts/${response.data.slug}`);
           }
           if (listsNeedRefresh) {
-            refreshNuxtData("admin-sidebar-posts");
-            refreshNuxtData("admin-posts-list-page");
-            refreshNuxtData("admin-command-palette-posts");
+            refreshNuxtData("studio-sidebar-posts");
+            refreshNuxtData("studio-posts-list-page");
+            refreshNuxtData("studio-command-palette-posts");
           }
         }
       }

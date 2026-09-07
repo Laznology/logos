@@ -50,19 +50,20 @@ const items: TabsItem[] = [
           root: 'min-h-0 flex-1 items-stretch justify-start gap-4 sm:gap-6 p-4 sm:p-6',
           list: 'flex-row sm:flex-col sm:w-44 shrink-0 sm:h-fit self-start items-start justify-start',
           trigger: 'justify-start text-start',
+          content: 'min-h-0 flex-1 overflow-y-auto',
         }"
       >
         <template #profile>
-          <AdminSettingsProfileTab />
+          <StudioSettingsProfileTab />
         </template>
         <template #security>
-          <AdminSettingsSecurityTab />
+          <StudioSettingsSecurityTab />
         </template>
         <template #sessions>
-          <AdminSettingsSessionsTab />
+          <StudioSettingsSessionsTab />
         </template>
         <template #preferences>
-          <AdminSettingsPreferencesTab />
+          <StudioSettingsPreferencesTab />
         </template>
       </UTabs>
     </template>

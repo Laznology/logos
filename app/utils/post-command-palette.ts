@@ -83,5 +83,5 @@ export function groupPostsByDate<T extends { createdAt: Date | string }>(
 export function postHref(post: PalettePost): string {
   return postStatus(post) === "published"
     ? `/posts/${post.slug}`
-    : `/admin/posts/${post.slug}`;
+    : `/studio/posts/${post.slug}`;
 }

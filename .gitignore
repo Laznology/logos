@@ -28,4 +28,7 @@ coverage/
 
 # Playwright
 playwright-report/
+# Context and Product Info
+CLAUDE.md
+PRODUCT.md
 test-results/

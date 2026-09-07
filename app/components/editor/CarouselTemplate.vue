@@ -10,10 +10,10 @@ import StarterKit from "@tiptap/starter-kit";
 import type { CarouselFrame } from "#shared/types/carousel";
 import ImageUpload from "~/components/editor/ImageUploadExtension";
 
-type Props = {
+interface Props {
   frame: CarouselFrame;
   editable?: boolean;
-};
+}
 
 const props = defineProps<Props>();
 
@@ -39,8 +39,12 @@ const bodyHtml = computed(() => {
 </script>
 
 <template>
-  <article class="carousel-frame" :class="{ 'carousel-frame--editable': editable }" :data-carousel-frame="frame.kind"
-    :data-carousel-index="frame.kind === 'slide' ? frame.index : undefined">
+  <article
+    class="carousel-frame"
+    :class="{ 'carousel-frame--editable': editable }"
+    :data-carousel-frame="frame.kind"
+    :data-carousel-index="frame.kind === 'slide' ? frame.index : undefined"
+  >
     <div v-if="frame.kind === 'cover'" class="carousel-cover">
       <p class="carousel-eyebrow">LOGOS</p>
       <h1 class="carousel-cover-title">{{ frame.title }}</h1>
@@ -49,7 +53,9 @@ const bodyHtml = computed(() => {
 
     <div v-else class="carousel-body">
       <div class="carousel-content" v-html="bodyHtml" />
-      <span class="carousel-slide-number">{{ String(frame.index).padStart(2, '0') }}</span>
+      <span class="carousel-slide-number">{{
+        String(frame.index).padStart(2, "0")
+      }}</span>
     </div>
   </article>
 </template>
