@@ -1,0 +1,37 @@
+services:
+  logos:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NUXT_SITE_URL: ${NUXT_SITE_URL}
+    image: logos:latest
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3000
+      NUXT_SITE_URL: ${NUXT_SITE_URL}
+      NUXT_SITE_ENV: production
+      NUXT_SESSION_PASSWORD: ${NUXT_SESSION_PASSWORD}
+      NUXT_OG_IMAGE_SECRET: ${NUXT_OG_IMAGE_SECRET}
+      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:-}
+    volumes:
+      - logos-data:/app/.data
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - >-
+          fetch('http://127.0.0.1:3000/').then((response) =>
+          process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  logos-data:
