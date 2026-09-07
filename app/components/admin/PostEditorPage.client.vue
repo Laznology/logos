@@ -11,17 +11,17 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import { Slice } from "@tiptap/pm/model";
 import type { EditorView } from "@tiptap/pm/view";
 
+import type { CarouselFrame } from "#shared/types/carousel";
+import { buildCarouselFrames } from "#shared/types/carousel";
 import type { PostGraph } from "#shared/types/graph";
 import PostNavbarActions from "~/components/admin/PostNavbarActions.vue";
+import CarouselSeparator from "~/components/editor/CarouselSeparatorExtension";
+import CarouselTemplate from "~/components/editor/CarouselTemplate.vue";
 import ImageUpload from "~/components/editor/ImageUploadExtension";
 import LinkPopover from "~/components/editor/LinkPopover.vue";
 import type { TocItem } from "~/components/editor/TableOfContents.vue";
 import TableOfContentsView from "~/components/editor/TableOfContents.vue";
 import GraphView from "~/components/GraphView.vue";
-import type { CarouselFrame } from "#shared/types/carousel";
-import { buildCarouselFrames } from "#shared/types/carousel";
-import CarouselSeparator from "~/components/editor/CarouselSeparatorExtension";
-import CarouselTemplate from "~/components/editor/CarouselTemplate.vue";
 
 type MarkdownEditor = Editor & {
   markdown?: {
@@ -276,14 +276,28 @@ const exportCarousel = async () => {
   isExporting.value = true;
   try {
     updateCarouselDocument();
-    await $csrfFetch(`/api/posts/${post.value.slug}`, {
-      method: "PUT",
-      body: {
-        title: post.value.title || "Untitled",
-        content: post.value.content,
-        metadata: post.value.metadata,
-      },
-    });
+    if (!post.value.id || post.value.slug === "untitled") {
+      const created = await $csrfFetch<{ data: PostSelectType }>("/api/posts", {
+        method: "POST",
+        body: {
+          title: post.value.title || "Untitled",
+          content: post.value.content,
+          metadata: post.value.metadata,
+        },
+      });
+      if (created?.data?.slug) {
+        post.value = { ...created.data };
+      }
+    } else {
+      await $csrfFetch(`/api/posts/${post.value.slug}`, {
+        method: "PUT",
+        body: {
+          title: post.value.title || "Untitled",
+          content: post.value.content,
+          metadata: post.value.metadata,
+        },
+      });
+    }
     const response = await fetch(
       `/api/admin/posts/${post.value.slug}/carousel-export`
     );
@@ -422,108 +436,110 @@ const deletePost = async () => {
             <UButton to="/admin" icon="i-lucide-arrow-left" label="Back to Posts" />
           </template>
         </UEmpty>
-        <div v-else class="mx-auto max-w-4xl px-6 py-12">
-          <input v-model="post.title" type="text" aria-label="Post title" placeholder="Untitled"
-            class="text-highlighted placeholder:text-muted/40 mb-3 w-full border-none bg-transparent text-4xl font-extrabold outline-none focus:ring-0 focus:outline-none sm:pl-8 sm:text-5xl"
-            @input="performAutoSave" />
+      </div>
 
-          <!-- Tags below title -->
-          <div class="mb-8 flex flex-wrap items-center gap-2 sm:pl-8">
-            <span v-for="tag in currentTags" :key="tag"
-              class="border-default bg-elevated/60 text-muted hover:text-highlighted group inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium transition">
-              <span class="text-primary/70 font-semibold">#</span>{{ tag }}
-              <button type="button"
-                class="text-muted/60 hover:text-error ml-0.5 inline-flex cursor-pointer items-center transition"
-                aria-label="Remove tag" @click="removeTag(tag)">
-                <UIcon name="i-lucide-x" class="size-3" />
-              </button>
-            </span>
+      <div v-else class="mx-auto max-w-4xl px-6 py-12">
+        <input v-model="post.title" type="text" aria-label="Post title" placeholder="Untitled"
+          class="text-highlighted placeholder:text-muted/40 mb-3 w-full border-none bg-transparent text-4xl font-extrabold outline-none focus:ring-0 focus:outline-none sm:pl-8 sm:text-5xl"
+          @input="performAutoSave" />
 
-            <div v-if="isAddingTag"
-              class="border-default bg-elevated/80 inline-flex items-center rounded-full border px-2 py-0.5">
-              <span class="text-primary/70 text-xs font-semibold">#</span>
-              <input ref="tagInputRef" v-model="newTagInput" type="text" placeholder="tag-name"
-                class="text-highlighted placeholder:text-muted/40 h-5 w-24 border-none bg-transparent px-1 text-xs outline-none focus:ring-0 focus:outline-none"
-                @keydown.enter.prevent="addTag" @keydown.esc="isAddingTag = false" @blur="onTagInputBlur" />
-            </div>
-
-            <button v-else type="button"
-              class="border-default/60 hover:border-primary/50 text-muted hover:text-highlighted inline-flex cursor-pointer items-center gap-1 rounded-full border border-dashed px-2.5 py-0.5 text-xs font-medium transition"
-              @click="startAddingTag">
-              <UIcon name="i-lucide-plus" class="size-3" />
-              <span>Add tag</span>
+        <!-- Tags below title -->
+        <div class="mb-8 flex flex-wrap items-center gap-2 sm:pl-8">
+          <span v-for="tag in currentTags" :key="tag"
+            class="border-default bg-elevated/60 text-muted hover:text-highlighted group inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium transition">
+            <span class="text-primary/70 font-semibold">#</span>{{ tag }}
+            <button type="button"
+              class="text-muted/60 hover:text-error ml-0.5 inline-flex cursor-pointer items-center transition"
+              aria-label="Remove tag" @click="removeTag(tag)">
+              <UIcon name="i-lucide-x" class="size-3" />
             </button>
+          </span>
+
+          <div v-if="isAddingTag"
+            class="border-default bg-elevated/80 inline-flex items-center rounded-full border px-2 py-0.5">
+            <span class="text-primary/70 text-xs font-semibold">#</span>
+            <input ref="tagInputRef" v-model="newTagInput" type="text" placeholder="tag-name"
+              class="text-highlighted placeholder:text-muted/40 h-5 w-24 border-none bg-transparent px-1 text-xs outline-none focus:ring-0 focus:outline-none"
+              @keydown.enter.prevent="addTag" @keydown.esc="isAddingTag = false" @blur="onTagInputBlur" />
           </div>
 
-          <UEditor ref="editorRef" v-slot="{ editor }" :model-value="editorValue"
-            :content-type="isCarousel ? 'json' : 'markdown'" :starter-kit="{ codeBlock: false }"
-            :extensions="editorExtensions" :handlers="customEditorHandlers" :editor-props="editorProps"
-            @update:model-value="onContentUpdate">
-            <UEditorDragHandle :editor="editor" />
-            <UEditorToolbar :editor="editor" layout="bubble" :items="editorToolbarItems">
-              <template #link>
-                <LinkPopover :editor="editor" />
-              </template>
-              <template #color>
-                <UPopover :ui="{ content: 'p-2' }">
-                  <UTooltip text="Text color">
-                    <UButton icon="i-lucide-palette" color="neutral" variant="ghost" size="sm"
-                      aria-label="Text color" />
-                  </UTooltip>
-                  <template #content>
-                    <div class="flex items-center gap-2">
-                      <label class="text-muted text-xs" for="editor-text-color">
-                        Text color
-                      </label>
-                      <input id="editor-text-color" type="color" class="size-7 cursor-pointer rounded-md border-0 p-0"
-                        @input="
-                          editor
-                            .chain()
-                            .focus()
-                            .setColor(inputColor($event))
-                            .run()
-                          " />
-                      <UButton icon="i-lucide-rotate-ccw" color="neutral" variant="ghost" size="sm"
-                        aria-label="Reset text color" @click="editor.chain().focus().unsetColor().run()" />
-                    </div>
-                  </template>
-                </UPopover>
-              </template>
-              <template #highlight>
-                <UPopover :ui="{ content: 'p-2' }">
-                  <UTooltip text="Highlight color">
-                    <UButton icon="i-lucide-highlighter" color="neutral" variant="ghost" size="sm"
-                      aria-label="Highlight color" />
-                  </UTooltip>
-                  <template #content>
-                    <div class="flex items-center gap-2">
-                      <label class="text-muted text-xs" for="editor-highlight-color">
-                        Highlight
-                      </label>
-                      <input id="editor-highlight-color" type="color"
-                        class="size-7 cursor-pointer rounded-md border-0 p-0" @input="
-                          editor
-                            .chain()
-                            .focus()
-                            .toggleHighlight({ color: inputColor($event) })
-                            .run()
-                          " />
-                      <UButton icon="i-lucide-rotate-ccw" color="neutral" variant="ghost" size="sm"
-                        aria-label="Reset highlight" @click="editor.chain().focus().unsetHighlight().run()" />
-                    </div>
-                  </template>
-                </UPopover>
-              </template>
-            </UEditorToolbar>
-            <UEditorSuggestionMenu :editor="editor" :items="editorSuggestionItems" />
-          </UEditor>
-          <div v-if="isCarousel && carouselFrames.length" class="mt-10 space-y-6">
-            <div class="text-muted text-sm font-medium">
-              Carousel preview
-            </div>
-            <CarouselTemplate v-for="frame in carouselFrames"
-              :key="frame.kind === 'cover' ? 'cover' : `slide-${frame.index}`" :frame="frame" editable />
+          <button v-else type="button"
+            class="border-default/60 hover:border-primary/50 text-muted hover:text-highlighted inline-flex cursor-pointer items-center gap-1 rounded-full border border-dashed px-2.5 py-0.5 text-xs font-medium transition"
+            @click="startAddingTag">
+            <UIcon name="i-lucide-plus" class="size-3" />
+            <span>Add tag</span>
+          </button>
+        </div>
+
+        <UEditor ref="editorRef" v-slot="{ editor }" :model-value="editorValue"
+          :content-type="isCarousel ? 'json' : 'markdown'" :starter-kit="{ codeBlock: false }"
+          :extensions="editorExtensions" :handlers="customEditorHandlers" :editor-props="editorProps"
+          @update:model-value="onContentUpdate">
+          <UEditorDragHandle :editor="editor" />
+          <UEditorToolbar :editor="editor" layout="bubble" :items="editorToolbarItems">
+            <template #link>
+              <LinkPopover :editor="editor" />
+            </template>
+            <template #color>
+              <UPopover :ui="{ content: 'p-2' }">
+                <UTooltip text="Text color">
+                  <UButton icon="i-lucide-palette" color="neutral" variant="ghost" size="sm" aria-label="Text color" />
+                </UTooltip>
+                <template #content>
+                  <div class="flex items-center gap-2">
+                    <label class="text-muted text-xs" for="editor-text-color">
+                      Text color
+                    </label>
+                    <input id="editor-text-color" type="color" class="size-7 cursor-pointer rounded-md border-0 p-0"
+                      @input="
+                        editor
+                          .chain()
+                          .focus()
+                          .setColor(inputColor($event))
+                          .run()
+                        " />
+                    <UButton icon="i-lucide-rotate-ccw" color="neutral" variant="ghost" size="sm"
+                      aria-label="Reset text color" @click="editor.chain().focus().unsetColor().run()" />
+                  </div>
+                </template>
+              </UPopover>
+            </template>
+            <template #highlight>
+              <UPopover :ui="{ content: 'p-2' }">
+                <UTooltip text="Highlight color">
+                  <UButton icon="i-lucide-highlighter" color="neutral" variant="ghost" size="sm"
+                    aria-label="Highlight color" />
+                </UTooltip>
+                <template #content>
+                  <div class="flex items-center gap-2">
+                    <label class="text-muted text-xs" for="editor-highlight-color">
+                      Highlight
+                    </label>
+                    <input id="editor-highlight-color" type="color"
+                      class="size-7 cursor-pointer rounded-md border-0 p-0" @input="
+                        editor
+                          .chain()
+                          .focus()
+                          .toggleHighlight({ color: inputColor($event) })
+                          .run()
+                        " />
+                    <UButton icon="i-lucide-rotate-ccw" color="neutral" variant="ghost" size="sm"
+                      aria-label="Reset highlight" @click="editor.chain().focus().unsetHighlight().run()" />
+                  </div>
+                </template>
+              </UPopover>
+            </template>
+          </UEditorToolbar>
+          <UEditorSuggestionMenu :editor="editor" :items="editorSuggestionItems" />
+        </UEditor>
+        <div v-if="isCarousel && carouselFrames.length" class="mt-10 space-y-6">
+          <div class="text-muted text-sm font-medium">
+            Carousel preview
           </div>
+          <CarouselTemplate v-for="frame in carouselFrames"
+            :key="frame.kind === 'cover' ? 'cover' : `slide-${frame.index}`" :frame="frame" editable />
         </div>
       </div>
+    </div>
+  </div>
 </template>
