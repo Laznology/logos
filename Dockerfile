@@ -21,7 +21,7 @@ FROM node:24.20.0-bookworm-slim AS runtime
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
-ENV PORT=3000
+ENV PORT=4000
 
 WORKDIR /app
 COPY --from=build --chown=node:node /app/.output ./.output
@@ -31,7 +31,7 @@ RUN chmod 755 ./docker/entrypoint.sh && mkdir -p /app/.data/db /app/.data/blob &
 
 USER node
 VOLUME ["/app/.data"]
-EXPOSE 3000
+EXPOSE 4000
 
 ENTRYPOINT ["/app/docker/entrypoint.sh"]
 CMD ["node", ".output/server/index.mjs"]
