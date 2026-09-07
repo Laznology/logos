@@ -33,7 +33,8 @@ const CarouselSeparator = Node.create({
       mergeAttributes(HTMLAttributes, {
         "data-type": "carousel-separator",
         "aria-label": "Slide separator",
-        class: "carousel-separator",
+        class:
+          "carousel-separator my-8 h-10 rounded border border-dashed border-primary/40 bg-primary/5",
       }),
     ];
   },

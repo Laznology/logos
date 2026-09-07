@@ -58,6 +58,7 @@
     "@vueuse/nuxt": "14.4.0",
     "ai": "^7.0.58",
     "drizzle-orm": "1.0.0-rc.4",
+    "fflate": "^0.8.3",
     "marked": "^18.0.9",
     "nuxt": "^4.5.2",
     "nuxt-auth-utils": "0.5.30",
