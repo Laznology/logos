@@ -1,4 +1,4 @@
-import { Renderer } from "@takumi-rs/core";
+import type { Renderer as TakumiRenderer } from "@takumi-rs/wasm";
 import type { JSONContent } from "@tiptap/core";
 import { zipSync } from "fflate";
 
@@ -160,7 +160,15 @@ export async function renderCarouselFrames(
   frames: CarouselFrame[],
   origin: string
 ): Promise<Uint8Array[]> {
-  const renderer = new Renderer();
+  // ponytail: platform-specific rendering module — @takumi-rs/wasm in Cloudflare Workers, @takumi-rs/wasm/node in Node.js/tests
+  let renderer: TakumiRenderer;
+  try {
+    const wasmNode = await import("@takumi-rs/wasm/node");
+    renderer = new wasmNode.Renderer();
+  } catch {
+    const wasm = await import("@takumi-rs/wasm");
+    renderer = new wasm.Renderer();
+  }
   const images: Uint8Array[] = [];
   for (const frame of frames) {
     const rendered = await renderer.render(frameNode(frame, origin), {
