@@ -8,7 +8,7 @@ services:
     image: logos:latest
     restart: unless-stopped
     ports:
-      - "${APP_PORT:-3000}:3000"
+      - "${APP_PORT:-4000}:4000"
     environment:
       NODE_ENV: production
       HOST: 0.0.0.0
