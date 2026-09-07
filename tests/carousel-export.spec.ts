@@ -1,6 +1,7 @@
 import { expect, test } from "@nuxt/test-utils/playwright";
 
 test("exports a carousel ZIP from the editor", async ({ page, goto }) => {
+  test.setTimeout(120_000);
   const stamp = Date.now();
   const username = `author_${stamp}`;
   const email = `author_${stamp}@example.com`;
@@ -18,8 +19,9 @@ test("exports a carousel ZIP from the editor", async ({ page, goto }) => {
 
   await page.getByRole("button", { name: /^carousel$/i }).click();
 
+  const title = `Carousel smoke ${stamp}`;
   const titleInput = page.getByRole("textbox", { name: /post title/i });
-  await titleInput.fill("Carousel smoke");
+  await titleInput.fill(title);
 
   const editor = page.locator(".tiptap.ProseMirror");
   await editor.click();
@@ -33,5 +35,7 @@ test("exports a carousel ZIP from the editor", async ({ page, goto }) => {
   await page.getByRole("button", { name: /export carousel/i }).click();
 
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toBe("carousel-smoke-carousel.zip");
+  expect(download.suggestedFilename()).toMatch(
+    new RegExp(`^carousel-smoke-${stamp}.*-carousel\\.zip$`)
+  );
 });

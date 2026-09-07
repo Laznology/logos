@@ -26,4 +26,28 @@ describe("carousel ZIP export", () => {
 
     expect([...png.slice(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
   });
+
+  it("renders a slide frame with body content", async () => {
+    const [png] = await renderCarouselFrames(
+      [
+        {
+          kind: "slide",
+          index: 1,
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [{ type: "text", text: "Slide title" }],
+            },
+            {
+              type: "paragraph",
+              content: [{ type: "text", text: "Slide body paragraph" }],
+            },
+          ],
+        },
+      ],
+      ""
+    );
+    expect([...png.slice(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+  });
 });

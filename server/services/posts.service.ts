@@ -159,18 +159,34 @@ class PostService {
   }
 
   async create(user: AuthUser, input?: Partial<PostInsertType>) {
-    const slug = slugify(input?.title || "untitled");
+    const baseSlug = slugify(input?.title || "untitled");
+    let slug = baseSlug;
+    let counter = 1;
+    while (true) {
+      const [existing] = await this.database
+        .select({ id: postTable.id })
+        .from(postTable)
+        .where(eq(postTable.slug, slug))
+        .limit(1);
+      if (!existing) {
+        break;
+      }
+      slug = `${baseSlug}-${counter++}`;
+    }
+    const content =
+      !input?.content || input.content === ""
+        ? { type: "doc", content: [] }
+        : input.content;
     const [newPost] = await this.database
       .insert(postTable)
       .values({
         title: input?.title || "Untitled",
         slug,
-        content: input?.content || "",
+        content,
         userId: user.id,
         metadata: input?.metadata || {},
       })
       .returning();
-
     if (!newPost) {
       throw createError({
         statusCode: 500,
@@ -193,7 +209,10 @@ class PostService {
       .update(postTable)
       .set({
         title: input.title ?? currentPost.title,
-        content: input.content ?? currentPost.content,
+        content:
+          input.content === ""
+            ? { type: "doc", content: [] }
+            : (input.content ?? currentPost.content),
         slug: newSlug,
         metadata: input.metadata ?? currentPost.metadata,
         updatedAt: new Date(),

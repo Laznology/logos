@@ -76,7 +76,8 @@ export default defineProtectedHandler(async (event) => {
       `attachment; filename="${post.slug}-carousel.zip"`
     );
     return zip;
-  } catch {
+  } catch (err) {
+    console.error("Carousel export render error:", err);
     throw createError({
       statusCode: 500,
       statusMessage: "Failed to render carousel",

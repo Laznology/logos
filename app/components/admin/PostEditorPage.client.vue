@@ -216,7 +216,7 @@ const customEditorHandlers = {
   carouselSeparator: {
     canExecute: (ed: Editor) => ed.can().insertCarouselSeparator(),
     execute: (ed: Editor) =>
-      ed.chain().focus().insertCarouselSeparator().run(),
+      ed.chain().focus().insertCarouselSeparator(),
     isActive: (ed: Editor) => ed.isActive("carouselSeparator"),
     isDisabled: () => false,
   },
@@ -276,33 +276,22 @@ const exportCarousel = async () => {
   isExporting.value = true;
   try {
     updateCarouselDocument();
+    post.value.content =
+      (carouselContent.value as unknown as typeof post.value.content) || {
+        type: "doc",
+        content: [],
+      };
+    await performAutoSave.flush();
     if (!post.value.id || post.value.slug === "untitled") {
-      const created = await $csrfFetch<{ data: PostSelectType }>("/api/posts", {
-        method: "POST",
-        body: {
-          title: post.value.title || "Untitled",
-          content: post.value.content,
-          metadata: post.value.metadata,
-        },
-      });
-      if (created?.data?.slug) {
-        post.value = { ...created.data };
-      }
-    } else {
-      await $csrfFetch(`/api/posts/${post.value.slug}`, {
-        method: "PUT",
-        body: {
-          title: post.value.title || "Untitled",
-          content: post.value.content,
-          metadata: post.value.metadata,
-        },
-      });
+      await performAutoSave();
     }
     const response = await fetch(
       `/api/admin/posts/${post.value.slug}/carousel-export`
     );
     if (!response.ok) {
-      throw new Error("Carousel export failed");
+      const errText = await response.text();
+      console.error("Carousel export failed:", response.status, errText);
+      throw new Error(`Carousel export failed: ${response.status} ${errText}`);
     }
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
@@ -333,6 +322,11 @@ const onContentUpdate = (val: Content) => {
   }
   if (isCarousel.value) {
     updateCarouselDocument();
+    post.value.content =
+      (carouselContent.value as unknown as typeof post.value.content) || {
+        type: "doc",
+        content: [],
+      };
   } else {
     post.value.content = val as typeof post.value.content;
   }
