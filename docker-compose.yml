@@ -12,7 +12,7 @@ services:
     environment:
       NODE_ENV: production
       HOST: 0.0.0.0
-      PORT: 3000
+      PORT: 4000
       NUXT_SITE_URL: ${NUXT_SITE_URL}
       NUXT_SITE_ENV: production
       NUXT_SESSION_PASSWORD: ${NUXT_SESSION_PASSWORD}
@@ -26,7 +26,7 @@ services:
         - node
         - -e
         - >-
-          fetch('http://127.0.0.1:3000/').then((response) =>
+          fetch('http://127.0.0.1:4000/').then((response) =>
           process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))
       interval: 30s
       timeout: 5s
