@@ -72,6 +72,7 @@ export default defineNuxtConfig({
     blob: true,
     db: {
       dialect: "sqlite",
+      applyMigrationsDuringBuild: false,
     },
   },
 
