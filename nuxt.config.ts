@@ -1,5 +1,6 @@
 const nitroPreset = process.env.NITRO_PRESET ?? "node-server";
 const isCloudflarePreset = nitroPreset.startsWith("cloudflare");
+const cloudflareR2BucketName = process.env.NUXT_HUB_CLOUDFLARE_R2_BUCKET_NAME;
 const NOINDEX_ROBOTS = "noindex, nofollow";
 export default defineNuxtConfig({
   compatibilityDate: "2026-06-30",
@@ -69,9 +70,19 @@ export default defineNuxtConfig({
   },
 
   hub: {
-    blob: true,
+    blob:
+      isCloudflarePreset && cloudflareR2BucketName
+        ? {
+            driver: "cloudflare-r2",
+            binding: "BLOB",
+            bucketName: cloudflareR2BucketName,
+          }
+        : true,
     db: {
       dialect: "sqlite",
+      connection: {
+        databaseId: process.env.NUXT_HUB_CLOUDFLARE_DATABASE_ID,
+      },
       applyMigrationsDuringBuild: false,
     },
   },

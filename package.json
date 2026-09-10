@@ -85,7 +85,8 @@
     "typescript": "6.0.3",
     "ultracite": "7.10.2",
     "vitest": "^5.0.0",
-    "vue-tsc": "^3.3.9"
+    "vue-tsc": "^3.3.9",
+    "wrangler": "^4.130.0"
   },
   "packageManager": "pnpm@11.18.0"
 }

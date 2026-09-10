@@ -30,7 +30,6 @@ APP_PORT=3000
 NUXT_SITE_URL=https://example.com
 NUXT_SESSION_PASSWORD=replace-with-a-random-string-at-least-32-characters
 NUXT_OG_IMAGE_SECRET=replace-with-another-random-secret
-AI_GATEWAY_API_KEY=
 ```
 
 Generate secrets instead of inventing them:
