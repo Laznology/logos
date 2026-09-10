@@ -23,6 +23,37 @@ describe("CarouselSeparator", () => {
       nodeTypes?.filter((type) => type === "carouselSeparator")
     ).toHaveLength(1);
   });
+  it("deletes a selected slide break without touching neighboring blocks", () => {
+    const editor = new Editor({ extensions: [StarterKit, CarouselSeparator] });
+    editor.commands.setContent({
+      type: "doc",
+      content: [
+        { type: "paragraph", content: [{ type: "text", text: "Before" }] },
+        { type: "carouselSeparator" },
+        { type: "paragraph", content: [{ type: "text", text: "After" }] },
+      ],
+    });
+
+    let separatorPos: number | undefined;
+    editor.state.doc.descendants((node, pos) => {
+      if (node.type.name === "carouselSeparator") {
+        separatorPos = pos;
+        return false;
+      }
+      return true;
+    });
+
+    expect(separatorPos).toBeDefined();
+    expect(editor.commands.setNodeSelection(separatorPos as number)).toBe(true);
+    expect(editor.commands.deleteSelection()).toBe(true);
+    expect(editor.getJSON()).toEqual({
+      type: "doc",
+      content: [
+        { type: "paragraph", content: [{ type: "text", text: "Before" }] },
+        { type: "paragraph", content: [{ type: "text", text: "After" }] },
+      ],
+    });
+  });
 
   it("exposes Slide in the slash command menu", () => {
     const items = editorSuggestionItems.flat();

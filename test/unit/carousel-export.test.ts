@@ -54,4 +54,26 @@ describe("carousel ZIP export", () => {
       new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])
     );
   });
+  it("keeps the cover before its slides in one export", async () => {
+    const cover = { kind: "cover" as const, title: "Cover frame" };
+    const slide = {
+      kind: "slide" as const,
+      index: 1,
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "Slide frame" }],
+        },
+      ],
+    };
+
+    const [coverImage, slideImage] = await renderCarouselFrames(
+      [cover, slide],
+      ""
+    );
+    const [expectedCover] = await renderCarouselFrames([cover], "");
+
+    expect(coverImage).toEqual(expectedCover);
+    expect(slideImage).not.toEqual(coverImage);
+  });
 });

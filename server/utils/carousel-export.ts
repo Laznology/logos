@@ -2,14 +2,120 @@ import type { Renderer as TakumiRenderer } from "@takumi-rs/wasm";
 import type { JSONContent } from "@tiptap/core";
 import { zipSync } from "fflate";
 
-import { CAROUSEL_HEIGHT, CAROUSEL_WIDTH } from "../../shared/types/carousel";
 import type { CarouselFrame } from "../../shared/types/carousel";
+import { CAROUSEL_HEIGHT, CAROUSEL_WIDTH } from "../../shared/types/carousel";
 
 type Style = Record<string, string | number>;
 type RenderNode =
   | { type: "container"; children?: RenderNode[]; style?: Style }
   | { type: "text"; text: string; style?: Style }
   | { type: "image"; src: string; style?: Style };
+const CAROUSEL_BACKGROUND = "#0a0a0a";
+const CAROUSEL_TEXT = "#faf8f5";
+const CAROUSEL_TEXT_DIM = "rgba(250, 248, 245, 0.5)";
+const CAROUSEL_ACCENT = "#ff4f00";
+const CAROUSEL_BORDER = "rgba(250, 248, 245, 0.18)";
+const CAROUSEL_LOGO_PATH = "/noctarian-logo.png";
+const CAROUSEL_NOISE_BACKGROUND =
+  'url("data:image/svg+xml,%3Csvg viewBox=%270 0 400 400%27 xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cfilter id=%27noiseFilter%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.75%27 numOctaves=%273%27 stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url(%23noiseFilter)%27 opacity=%270.08%27/%3E%3C/svg%3E")';
+
+function resolveImageSource(src: string, origin: string): string {
+  if (!src || src.startsWith("http://") || src.startsWith("https://")) {
+    return src;
+  }
+  if (src.startsWith("/")) {
+    return `${origin}${src}`;
+  }
+  return `${origin}/${src}`;
+}
+function textNode(text: string, style: Style): RenderNode {
+  return { type: "text", text, style };
+}
+
+function accentNode(): RenderNode {
+  return {
+    type: "container",
+    style: {
+      display: "flex",
+      width: 60,
+      height: 4,
+      backgroundColor: CAROUSEL_ACCENT,
+    },
+  };
+}
+
+function coverFooterNode(logoSrc: string | null): RenderNode {
+  const children: RenderNode[] = [
+    textNode("01", {
+      color: CAROUSEL_TEXT_DIM,
+      fontSize: 18,
+      fontWeight: 700,
+      letterSpacing: 4,
+    }),
+  ];
+
+  if (logoSrc) {
+    children.unshift({
+      type: "image",
+      src: logoSrc,
+      style: {
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+      },
+    });
+  }
+
+  return {
+    type: "container",
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      width: "100%",
+      paddingTop: 24,
+      borderTop: `1px solid ${CAROUSEL_BORDER}`,
+    },
+    children,
+  };
+}
+
+function slideFooterNode(index: number, logoSrc: string | null): RenderNode {
+  const children: RenderNode[] = [
+    textNode(String(index).padStart(2, "0"), {
+      color: CAROUSEL_TEXT_DIM,
+      fontSize: 18,
+      fontWeight: 700,
+      letterSpacing: 4,
+    }),
+  ];
+
+  if (logoSrc) {
+    children.unshift({
+      type: "image",
+      src: logoSrc,
+      style: {
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+      },
+    });
+  }
+
+  return {
+    type: "container",
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      width: "100%",
+      marginTop: 48,
+      paddingTop: 24,
+      borderTop: `1px solid ${CAROUSEL_BORDER}`,
+    },
+    children,
+  };
+}
 
 function textFromNode(node: JSONContent): string {
   if (node.text) {
@@ -93,58 +199,76 @@ function blockNode(node: JSONContent): RenderNode {
   };
 }
 
-function resolveImageSource(src: string, origin: string): string {
-  if (!src || src.startsWith("http://") || src.startsWith("https://")) {
-    return src;
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunkSize = 32_768;
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCodePoint(...bytes.subarray(index, index + chunkSize));
   }
-  if (src.startsWith("/")) {
-    return `${origin}${src}`;
-  }
-  return `${origin}/${src}`;
+  return btoa(binary);
 }
 
-function frameNode(frame: CarouselFrame, origin: string): RenderNode {
+async function loadLogoSource(origin: string): Promise<string | null> {
+  if (!origin) {
+    return null;
+  }
+
+  const response = await fetch(resolveImageSource(CAROUSEL_LOGO_PATH, origin));
+  if (!response.ok) {
+    throw new Error(`Failed to load carousel logo: ${response.status}`);
+  }
+
+  const contentType = response.headers.get("content-type") || "image/png";
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  return `data:${contentType};base64,${bytesToBase64(bytes)}`;
+}
+
+function frameNode(
+  frame: CarouselFrame,
+  origin: string,
+  logoSrc: string | null
+): RenderNode {
   const surface: Style = {
     width: "100%",
     height: "100%",
     display: "flex",
     flexDirection: "column",
-    backgroundColor: "#f7f5f0",
-    color: "#191a1c",
-    padding: 120,
+    backgroundColor: CAROUSEL_BACKGROUND,
+    backgroundImage: CAROUSEL_NOISE_BACKGROUND,
+    backgroundRepeat: "repeat",
+    backgroundSize: "400px 400px",
+    color: CAROUSEL_TEXT,
+    padding: "94px 119px",
     boxSizing: "border-box",
   };
 
   if (frame.kind === "cover") {
     return {
       type: "container",
-      style: { ...surface, justifyContent: "space-between" },
+      style: { ...surface, justifyContent: "flex-start" },
       children: [
+        accentNode(),
         {
-          type: "text",
-          text: "LOGOS",
+          type: "container",
           style: {
-            color: "#6f716f",
-            fontSize: 18,
-            fontWeight: 700,
-            letterSpacing: 4,
+            display: "flex",
+            flexDirection: "column",
+            flex: 1,
+            justifyContent: "center",
           },
+          children: [
+            textNode(frame.title, {
+              display: "flex",
+              fontFamily: "Lora",
+              fontSize: 82,
+              fontWeight: 300,
+              color: CAROUSEL_TEXT,
+              lineHeight: 1.2,
+              letterSpacing: "-0.01em",
+            }),
+          ],
         },
-        {
-          type: "text",
-          text: frame.title,
-          style: { fontSize: 82, fontWeight: 700, lineHeight: 1.02 },
-        },
-        {
-          type: "text",
-          text: "CAROUSEL",
-          style: {
-            color: "#6f716f",
-            fontSize: 18,
-            fontWeight: 700,
-            letterSpacing: 4,
-          },
-        },
+        coverFooterNode(logoSrc),
       ],
     };
   }
@@ -155,10 +279,26 @@ function frameNode(frame: CarouselFrame, origin: string): RenderNode {
       child.src = resolveImageSource(child.src, origin);
     }
   }
+
   return {
     type: "container",
-    style: { ...surface, justifyContent: "center" },
-    children,
+    style: { ...surface, justifyContent: "flex-start" },
+    children: [
+      accentNode(),
+      {
+        type: "container",
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+          justifyContent: "center",
+          width: "100%",
+          overflow: "hidden",
+        },
+        children,
+      },
+      slideFooterNode(frame.index + 1, logoSrc),
+    ],
   };
 }
 
@@ -167,24 +307,29 @@ export async function renderCarouselFrames(
   origin: string
 ): Promise<Uint8Array[]> {
   // ponytail: platform-specific rendering module — @takumi-rs/wasm in Cloudflare Workers, @takumi-rs/wasm/node in Node.js/tests
-  let renderer: TakumiRenderer;
+  let createRenderer: () => TakumiRenderer;
   try {
     const wasmNode = await import("@takumi-rs/wasm/node");
-    renderer = new wasmNode.Renderer();
+    createRenderer = () => new wasmNode.Renderer();
   } catch {
     const wasm = await import("@takumi-rs/wasm");
-    renderer = new wasm.Renderer();
+    createRenderer = () => new wasm.Renderer();
   }
-  const images = await Promise.all(
-    frames.map(async (frame) => {
-      const rendered = await renderer.render(frameNode(frame, origin), {
+  const logoSrc = frames.length > 0 ? await loadLogoSource(origin) : null;
+  const images: Uint8Array[] = [];
+  // Takumi can return another frame's buffer when a renderer is reused.
+  for (const frame of frames) {
+    // oxlint-disable-next-line no-await-in-loop -- isolated renderers preserve frame order.
+    const rendered = await createRenderer().render(
+      frameNode(frame, origin, logoSrc),
+      {
         width: CAROUSEL_WIDTH,
         height: CAROUSEL_HEIGHT,
         format: "png",
-      });
-      return new Uint8Array(rendered);
-    })
-  );
+      }
+    );
+    images.push(Uint8Array.from(new Uint8Array(rendered)));
+  }
   return images;
 }
 
