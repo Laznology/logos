@@ -112,6 +112,15 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
             <UKbd value="K" size="sm" />
           </template>
         </UNavigationMenu>
+        <UButton
+          to="/studio/posts"
+          :icon="collapsed ? 'i-lucide-list' : undefined"
+          :label="collapsed ? undefined : 'View all'"
+          variant="ghost"
+          color="neutral"
+          block
+          class="text-default mt-2 justify-start"
+        />
       </template>
 
       <template #footer="{ collapsed }">

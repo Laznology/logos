@@ -1,12 +1,14 @@
 import type { SQL } from "drizzle-orm";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "hub:db";
 import { postTable, userTable } from "hub:db:schema";
+import type { PostBulkAction, PostStatus } from "~~/shared/types/post-status";
+import { setPostStatus } from "~~/shared/types/post-status";
 
 const POST_NOT_FOUND_MSG = "Post not found";
 
 interface PostFilters {
-  status?: "draft" | "published";
+  status?: PostStatus;
   authorId?: string;
 }
 
@@ -19,10 +21,8 @@ const getAuthCondition = (user: AuthUser) => {
 
 const getFilterCondition = ({ status, authorId }: PostFilters) => {
   let statusCondition: SQL<unknown> | undefined;
-  if (status === "published") {
-    statusCondition = sql`json_extract(${postTable.metadata}, '$.status') = 'published'`;
-  } else if (status === "draft") {
-    statusCondition = sql`coalesce(json_extract(${postTable.metadata}, '$.status'), 'draft') != 'published'`;
+  if (status) {
+    statusCondition = sql`coalesce(json_extract(${postTable.metadata}, '$.status'), 'draft') = ${status}`;
   }
   return and(
     authorId ? eq(postTable.userId, authorId) : undefined,
@@ -230,6 +230,36 @@ class PostService {
     }
 
     return updatedPost;
+  }
+
+  async bulkAction(ids: string[], user: AuthUser, action: PostBulkAction) {
+    const uniqueIds = [...new Set(ids)];
+    const selectedPosts = await this.database
+      .select({ id: postTable.id, metadata: postTable.metadata })
+      .from(postTable)
+      .where(and(inArray(postTable.id, uniqueIds), getAuthCondition(user)));
+
+    if (action === "delete") {
+      await this.database
+        .delete(postTable)
+        .where(and(inArray(postTable.id, uniqueIds), getAuthCondition(user)));
+      return { success: true, action, count: selectedPosts.length };
+    }
+
+    const status = action as Exclude<PostBulkAction, "delete">;
+    const updatedAt = new Date();
+    await Promise.all(
+      selectedPosts.map((post) =>
+        this.database
+          .update(postTable)
+          .set({
+            metadata: setPostStatus(post.metadata, status),
+            updatedAt,
+          })
+          .where(and(eq(postTable.id, post.id), getAuthCondition(user)))
+      )
+    );
+    return { success: true, action, count: selectedPosts.length };
   }
 
   async delete(slug: string, user: AuthUser) {

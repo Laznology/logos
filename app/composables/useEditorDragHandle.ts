@@ -205,7 +205,10 @@ export function useEditorDragHandle<T extends EditorCustomHandlers>(
           {
             icon: "i-lucide-trash",
             kind: "delete",
-            label: "Delete",
+            label:
+              nodeType === "carouselSeparator"
+                ? "Delete slide break"
+                : "Delete",
             pos: selectedNode.value?.pos,
           },
         ],

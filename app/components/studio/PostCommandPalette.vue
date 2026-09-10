@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import type { CommandPaletteGroup } from "@nuxt/ui";
 
+import type { PostStatus } from "#shared/types/post-status";
+import {
+  POST_STATUS_LABELS,
+  POST_STATUS_VALUES,
+} from "#shared/types/post-status";
 import {
   filterPalettePosts,
   groupPostsByDate,
@@ -23,7 +28,7 @@ const open = defineModel<boolean>("open", { required: true });
 const searchQuery = ref("");
 const debouncedQuery = refDebounced(searchQuery, 300);
 const titleOnly = ref(false);
-const status = ref<"all" | "draft" | "published">("all");
+const status = ref<"all" | PostStatus>("all");
 const authorId = ref("all");
 const showPreview = ref(true);
 const selectedPost = ref<PalettePost>();
@@ -55,8 +60,10 @@ watch(open, async (isOpen) => {
 
 const statusOptions = [
   { label: "All statuses", value: "all" },
-  { label: "Draft", value: "draft" },
-  { label: "Published", value: "published" },
+  ...POST_STATUS_VALUES.map((value) => ({
+    label: POST_STATUS_LABELS[value],
+    value,
+  })),
 ];
 
 const {

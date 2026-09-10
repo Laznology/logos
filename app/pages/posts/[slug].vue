@@ -85,6 +85,21 @@ const { data: graph } = await useFetch("/api/public/graph", {
   transform: (response: GraphResponse) => response.data,
 });
 
+const publicGridClass = computed(() => {
+  const hasHeadings = Boolean(post.value?.headings?.length);
+  const hasGraph = siteSettings.value?.graphEnabledByDefault !== false;
+  if (hasHeadings && hasGraph) {
+    return "xl:grid-cols-[12rem_minmax(0,1fr)_20rem]";
+  }
+  if (hasHeadings) {
+    return "xl:grid-cols-[12rem_minmax(0,1fr)]";
+  }
+  if (hasGraph) {
+    return "xl:grid-cols-[minmax(0,1fr)_20rem]";
+  }
+  return "xl:grid-cols-1";
+});
+
 const wordCountText = computed(() => {
   const count = post.value?.wordCount || 0;
   return `${count} ${count === 1 ? "word" : "words"}`;
@@ -372,7 +387,8 @@ useSchemaOrg(
 
       <div v-else class="relative">
         <div
-          class="mx-auto grid max-w-7xl gap-10 px-6 py-12 sm:py-16 xl:grid-cols-[12rem_minmax(0,1fr)_20rem]"
+          class="mx-auto grid max-w-7xl gap-10 px-6 py-12 sm:py-16"
+          :class="publicGridClass"
         >
           <aside v-if="post.headings?.length" class="hidden xl:block">
             <div class="sticky top-24">

@@ -220,6 +220,8 @@ const customEditorHandlers = {
     isDisabled: () => false,
   },
 };
+const { getItems: getDragHandleItems, onNodeChange } =
+  useEditorDragHandle(customEditorHandlers);
 
 const handleTocSelect = (item: TocItem) => {
   activeTocId.value = item.id;
@@ -417,35 +419,6 @@ const deletePost = async () => {
             @delete-post="deletePost"
             @update-post="(updated) => Object.assign(post, updated)"
           />
-          <UButton
-            :label="isCarousel ? 'Article' : 'Carousel'"
-            :icon="
-              isCarousel ? 'i-lucide-file-text' : 'i-lucide-panels-top-left'
-            "
-            color="neutral"
-            variant="outline"
-            size="sm"
-            @click="toggleCarouselMode"
-          />
-          <UButton
-            v-if="isCarousel"
-            label="Export Carousel"
-            icon="i-lucide-download"
-            color="primary"
-            size="sm"
-            :loading="isExporting"
-            :disabled="isExporting"
-            @click="exportCarousel"
-          />
-          <PostNavbarActions
-            v-if="post"
-            :post="post"
-            :status-text="statusText"
-            @copy-link="copyLink"
-            @copy-content="copyContent"
-            @delete-post="deletePost"
-            @update-post="(updated) => Object.assign(post, updated)"
-          />
         </div>
       </Teleport>
     </ClientOnly>
@@ -572,7 +545,33 @@ const deletePost = async () => {
           :editor-props="editorProps"
           @update:model-value="onContentUpdate"
         >
-          <UEditorDragHandle :editor="editor" />
+          <UEditorDragHandle
+            v-slot="{ ui }"
+            :editor="editor"
+            @node-change="onNodeChange"
+          >
+            <UDropdownMenu
+              v-slot="{ open }"
+              :modal="false"
+              :items="getDragHandleItems(editor)"
+              :content="{ side: 'left' }"
+              :ui="{ content: 'w-48', label: 'text-xs' }"
+              @update:open="
+                editor.chain().setMeta('lockDragHandle', $event).run()
+              "
+            >
+              <UButton
+                icon="i-lucide-grip-vertical"
+                color="neutral"
+                variant="ghost"
+                active-variant="soft"
+                size="sm"
+                :active="open"
+                :class="ui.handle()"
+                aria-label="Block actions"
+              />
+            </UDropdownMenu>
+          </UEditorDragHandle>
           <UEditorToolbar
             :editor="editor"
             layout="bubble"

@@ -1,3 +1,6 @@
+import type { PostStatus } from "#shared/types/post-status";
+import { postStatus } from "#shared/types/post-status";
+
 export interface PalettePost {
   id: string;
   title: string;
@@ -14,13 +17,8 @@ export interface PalettePost {
 interface PaletteFilters {
   query: string;
   titleOnly: boolean;
-  status: "all" | "draft" | "published";
+  status: "all" | PostStatus;
   authorId: string;
-}
-
-export function postStatus(post: PalettePost): "draft" | "published" {
-  const metadata = post.metadata as Record<string, unknown> | null;
-  return metadata?.status === "published" ? "published" : "draft";
 }
 
 export function filterPalettePosts<T extends PalettePost>(
