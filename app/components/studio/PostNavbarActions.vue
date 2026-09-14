@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { PostStatus } from "~~/shared/types/post-status";
+
 const props = defineProps<{
   post: PostSelectType;
   statusText: string;
@@ -60,10 +62,14 @@ const saveTags = async () => {
     });
   }
 };
-const isPublished = computed(() => {
+const currentStatus = computed<PostStatus>(() => {
   const metadata = (props.post.metadata as Record<string, unknown>) || {};
-  return metadata.status === "published";
+  const status = metadata.status;
+  return status === "published" || status === "private" || status === "archive"
+    ? status
+    : "draft";
 });
+const isPublished = computed(() => currentStatus.value === "published");
 
 const publicUrl = computed(() => {
   if (typeof window !== "undefined") {
@@ -84,19 +90,13 @@ const copyPublicUrl = async () => {
   });
 };
 
-const togglePublish = async (publish: boolean) => {
-  if (!props.post.slug) {
+const updateStatus = async (status: PostStatus) => {
+  if (!props.post.slug || status === currentStatus.value) {
     return;
   }
   isUpdatingPublish.value = true;
   try {
     const currentMeta = (props.post.metadata as Record<string, unknown>) || {};
-    const updatedMetadata = {
-      ...currentMeta,
-      status: publish ? "published" : "draft",
-      [publish ? "publishedAt" : "unpublishedAt"]: new Date().toISOString(),
-    };
-
     const response = await $csrfFetch<{
       success: boolean;
       data: PostSelectType;
@@ -105,21 +105,28 @@ const togglePublish = async (publish: boolean) => {
       body: {
         title: props.post.title,
         content: props.post.content,
-        metadata: updatedMetadata,
+        metadata: {
+          ...currentMeta,
+          status,
+          ...(status === "published"
+            ? { publishedAt: new Date().toISOString() }
+            : {}),
+        },
       },
     });
 
     if (response.data) {
       emit("updatePost", response.data);
       toast.add({
-        title: publish ? "Published to web!" : "Post unpublished",
-        icon: publish ? "i-lucide-globe" : "i-lucide-lock",
-        color: publish ? "success" : "neutral",
+        title:
+          status === "published" ? "Published to web!" : `Moved to ${status}`,
+        icon: status === "published" ? "i-lucide-globe" : "i-lucide-check",
+        color: status === "published" ? "success" : "neutral",
       });
     }
   } catch {
     toast.add({
-      title: "Failed to update publish status",
+      title: "Failed to update post status",
       color: "error",
     });
   } finally {
@@ -127,7 +134,27 @@ const togglePublish = async (publish: boolean) => {
   }
 };
 
+const togglePublish = () =>
+  updateStatus(isPublished.value ? "draft" : "published");
+
 const dropdownItems = computed(() => [
+  [
+    {
+      label: isPublished.value ? "Unpublish" : "Publish",
+      icon: isPublished.value ? "i-lucide-lock" : "i-lucide-globe",
+      onSelect: () => togglePublish(),
+    },
+    {
+      label: "Private",
+      icon: "i-lucide-lock-keyhole",
+      onSelect: () => updateStatus("private"),
+    },
+    {
+      label: "Archive",
+      icon: "i-lucide-archive",
+      onSelect: () => updateStatus("archive"),
+    },
+  ],
   [
     {
       label: "Copy Link",
@@ -149,21 +176,10 @@ const dropdownItems = computed(() => [
     },
   ],
 ]);
-const mobileDropdownItems = computed(() => [
-  [
-    {
-      label: isPublished.value ? "Unpublish" : "Publish",
-      icon: isPublished.value ? "i-lucide-lock" : "i-lucide-globe",
-      onSelect: () => togglePublish(!isPublished.value),
-    },
-    ...(dropdownItems.value[0] || []),
-  ],
-  dropdownItems.value[1],
-]);
 </script>
 
 <template>
-  <div class="flex items-center gap-2">
+  <div class="flex shrink-0 items-center gap-2">
     <div class="hidden items-center gap-2 sm:flex">
       <span class="text-muted mr-1 text-xs">{{ statusText }}</span>
 
@@ -222,7 +238,7 @@ const mobileDropdownItems = computed(() => [
                 size="md"
                 label="Publish"
                 :loading="isUpdatingPublish"
-                @click="togglePublish(true)"
+                @click="updateStatus('published')"
               />
               <div class="text-muted flex items-start gap-2 text-xs">
                 <UIcon name="i-lucide-info" class="mt-0.5 size-4 shrink-0" />
@@ -266,7 +282,7 @@ const mobileDropdownItems = computed(() => [
                   variant="ghost"
                   label="Unpublish"
                   :loading="isUpdatingPublish"
-                  @click="togglePublish(false)"
+                  @click="updateStatus('draft')"
                 />
               </div>
             </div>
@@ -282,27 +298,15 @@ const mobileDropdownItems = computed(() => [
         aria-label="Copy Link"
         @click="emit('copyLink')"
       />
-
-      <UDropdownMenu :items="dropdownItems">
-        <UButton
-          variant="ghost"
-          color="neutral"
-          size="sm"
-          icon="i-lucide-more-horizontal"
-          aria-label="More actions"
-        />
-      </UDropdownMenu>
     </div>
-    <div class="flex sm:hidden">
-      <UDropdownMenu :items="mobileDropdownItems as any">
-        <UButton
-          variant="ghost"
-          color="neutral"
-          size="sm"
-          icon="i-lucide-more-horizontal"
-          aria-label="More actions"
-        />
-      </UDropdownMenu>
-    </div>
+    <UDropdownMenu :items="dropdownItems">
+      <UButton
+        variant="ghost"
+        color="neutral"
+        size="sm"
+        icon="i-lucide-ellipsis"
+        aria-label="More actions"
+      />
+    </UDropdownMenu>
   </div>
 </template>

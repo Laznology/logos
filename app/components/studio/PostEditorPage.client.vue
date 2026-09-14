@@ -51,6 +51,7 @@ const toast = useToast();
 const { post, pending, savingStatus, performAutoSave, error } = usePostEditor();
 const { $csrfFetch } = useNuxtApp();
 const { copy, isSupported } = useClipboard();
+const mobileTocOpen = ref(false);
 const isAddingTag = ref(false);
 const newTagInput = ref("");
 const tagInputRef = ref<HTMLInputElement | null>(null);
@@ -222,6 +223,11 @@ const customEditorHandlers = {
 };
 const { getItems: getDragHandleItems, onNodeChange } =
   useEditorDragHandle(customEditorHandlers);
+const openBlockActionsFromContext = (event: MouseEvent) => {
+  if (event.target instanceof Element) {
+    event.target.closest("button")?.click();
+  }
+};
 
 const handleTocSelect = (item: TocItem) => {
   activeTocId.value = item.id;
@@ -231,6 +237,10 @@ const handleTocSelect = (item: TocItem) => {
   if (el) {
     el.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+};
+const handleMobileTocSelect = (item: TocItem) => {
+  handleTocSelect(item);
+  mobileTocOpen.value = false;
 };
 
 const statusText = computed(() => {
@@ -387,41 +397,37 @@ const deletePost = async () => {
 
 <template>
   <div class="bg-default relative flex h-full flex-col">
-    <ClientOnly>
-      <Teleport to="#navbar-actions">
-        <div class="flex items-center gap-2">
-          <UButton
-            :label="isCarousel ? 'Article' : 'Carousel'"
-            :icon="
-              isCarousel ? 'i-lucide-file-text' : 'i-lucide-panels-top-left'
-            "
-            color="neutral"
-            variant="outline"
-            size="sm"
-            @click="toggleCarouselMode"
-          />
-          <UButton
-            v-if="isCarousel"
-            label="Export Carousel"
-            icon="i-lucide-download"
-            color="primary"
-            size="sm"
-            :loading="isExporting"
-            :disabled="isExporting"
-            @click="exportCarousel"
-          />
-          <PostNavbarActions
-            v-if="post"
-            :post="post"
-            :status-text="statusText"
-            @copy-link="copyLink"
-            @copy-content="copyContent"
-            @delete-post="deletePost"
-            @update-post="(updated) => Object.assign(post, updated)"
-          />
-        </div>
-      </Teleport>
-    </ClientOnly>
+    <Teleport to="#navbar-actions">
+      <div class="flex min-w-0 shrink-0 items-center gap-2">
+        <UButton
+          :label="isCarousel ? 'Article' : 'Carousel'"
+          :icon="isCarousel ? 'i-lucide-file-text' : 'i-lucide-panels-top-left'"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          @click="toggleCarouselMode"
+        />
+        <UButton
+          v-if="isCarousel"
+          label="Export Carousel"
+          icon="i-lucide-download"
+          color="primary"
+          size="sm"
+          :loading="isExporting"
+          :disabled="isExporting"
+          @click="exportCarousel"
+        />
+        <PostNavbarActions
+          v-if="post"
+          :post="post"
+          :status-text="statusText"
+          @copy-link="copyLink"
+          @copy-content="copyContent"
+          @delete-post="deletePost"
+          @update-post="(updated) => Object.assign(post, updated)"
+        />
+      </div>
+    </Teleport>
     <Teleport to="body">
       <UButton
         class="!fixed right-6 bottom-6 z-[100] shadow-lg"
@@ -452,6 +458,45 @@ const deletePost = async () => {
       :active-id="activeTocId"
       @select="handleTocSelect"
     />
+    <UDrawer v-if="adminTocItems.length" v-model:open="mobileTocOpen">
+      <UButton
+        class="!fixed right-6 bottom-20 z-[100] shadow-lg sm:hidden"
+        icon="i-lucide-list"
+        label="Contents"
+        color="neutral"
+      />
+      <template #content>
+        <div class="flex max-h-[70dvh] flex-col p-4">
+          <div
+            class="border-default text-highlighted mb-2 flex items-center justify-between border-b pb-2 text-sm font-semibold"
+          >
+            <span>Table of Contents</span>
+            <span class="text-muted text-xs"
+              >{{ adminTocItems.length }} sections</span
+            >
+          </div>
+          <div class="space-y-1 overflow-y-auto">
+            <button
+              v-for="item in adminTocItems"
+              :key="item.id"
+              type="button"
+              class="hover:bg-muted/60 flex min-h-11 w-full cursor-pointer items-center rounded-md px-2 py-2 text-left text-sm transition"
+              :class="
+                activeTocId === item.id
+                  ? 'text-primary bg-primary/10 font-semibold'
+                  : item.level === 1
+                    ? 'text-highlighted font-medium'
+                    : 'text-muted'
+              "
+              :style="{ paddingLeft: `${(item.level - 1) * 0.75 + 0.5}rem` }"
+              @click="handleMobileTocSelect(item)"
+            >
+              <span class="line-clamp-2">{{ item.text }}</span>
+            </button>
+          </div>
+        </div>
+      </template>
+    </UDrawer>
 
     <div class="flex-1 overflow-y-auto">
       <div v-if="pending" class="mx-auto max-w-4xl space-y-4 px-6 py-12">
@@ -569,6 +614,7 @@ const deletePost = async () => {
                 :active="open"
                 :class="ui.handle()"
                 aria-label="Block actions"
+                @contextmenu.prevent="openBlockActionsFromContext"
               />
             </UDropdownMenu>
           </UEditorDragHandle>
@@ -616,15 +662,6 @@ const deletePost = async () => {
                       aria-label="Reset text color"
                       @click="editor.chain().focus().unsetColor().run()"
                     />
-                    " />
-                    <UButton
-                      icon="i-lucide-rotate-ccw"
-                      color="neutral"
-                      variant="ghost"
-                      size="sm"
-                      aria-label="Reset text color"
-                      @click="editor.chain().focus().unsetColor().run()"
-                    />
                   </div>
                 </template>
               </UPopover>
@@ -660,15 +697,6 @@ const deletePost = async () => {
                           .run()
                       "
                     />
-                    <UButton
-                      icon="i-lucide-rotate-ccw"
-                      color="neutral"
-                      variant="ghost"
-                      size="sm"
-                      aria-label="Reset highlight"
-                      @click="editor.chain().focus().unsetHighlight().run()"
-                    />
-                    " />
                     <UButton
                       icon="i-lucide-rotate-ccw"
                       color="neutral"
