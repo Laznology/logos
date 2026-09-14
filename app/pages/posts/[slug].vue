@@ -284,9 +284,14 @@ useSchemaOrg(
         class="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-4 sm:px-6"
       >
         <div class="flex min-w-0 flex-1 items-center gap-2 text-sm">
-          <NuxtLink to="/" class="shrink-0 transition hover:opacity-80">
-            <AppLogo :show-text="false" size="sm" />
-          </NuxtLink>
+          <UButton
+            to="/"
+            icon="i-lucide-house"
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            aria-label="Home"
+          />
           <span class="text-muted select-none">/</span>
           <span class="text-muted min-w-0 truncate">{{
             post?.title || "Untitled"
@@ -420,7 +425,7 @@ useSchemaOrg(
             </div>
           </aside>
 
-          <article class="w-full">
+          <article class="w-full min-w-0">
             <header class="mb-8 space-y-4">
               <h1
                 :style="{ viewTransitionName: `post-title-${slug}` }"
@@ -429,9 +434,9 @@ useSchemaOrg(
                 {{ post.title || "Untitled" }}
               </h1>
               <div
-                class="border-default text-muted flex flex-wrap items-center gap-x-3 gap-y-2 border-b pb-6 text-sm"
+                class="border-default text-muted flex flex-wrap items-center gap-x-2.5 gap-y-2 border-b pb-5 text-sm sm:gap-x-3 sm:pb-6"
               >
-                <div class="flex items-center gap-2">
+                <div class="flex shrink-0 items-center gap-2">
                   <UAvatar
                     v-if="post.author?.avatar"
                     :src="post.author.avatar"
@@ -448,18 +453,23 @@ useSchemaOrg(
                     post.author?.name || "Author"
                   }}</span>
                 </div>
-                <span class="opacity-40">•</span>
+                <span class="shrink-0 opacity-40">•</span>
                 <NuxtTime
+                  class="whitespace-nowrap tabular-nums"
                   :datetime="post.createdAt"
                   locale="en-US"
                   month="long"
                   day="numeric"
                   year="numeric"
                 />
-                <span class="opacity-40">•</span
-                ><span>{{ wordCountText }}</span>
-                <span class="opacity-40">•</span
-                ><span>{{ readingTimeText }}</span>
+                <span class="shrink-0 opacity-40">•</span>
+                <span class="whitespace-nowrap tabular-nums">{{
+                  wordCountText
+                }}</span>
+                <span class="hidden shrink-0 opacity-40 sm:inline">•</span>
+                <span class="hidden whitespace-nowrap tabular-nums sm:inline">{{
+                  readingTimeText
+                }}</span>
               </div>
 
               <div

@@ -44,9 +44,43 @@ const { data: sidebarPosts } = await useFetch<PostListType>("/api/posts", {
   key: "studio-sidebar-posts",
   default: () => [],
 });
+const recentPostSlugs = useCookie<string[]>("studio_recent_posts", {
+  default: () => [],
+});
+const currentPostSlug = computed(() => {
+  const slug = route.params.slug;
+  return route.path.startsWith("/studio/posts/") && typeof slug === "string"
+    ? slug
+    : null;
+});
+
+watch(
+  currentPostSlug,
+  (slug) => {
+    if (!slug) {
+      return;
+    }
+    recentPostSlugs.value = [
+      slug,
+      ...recentPostSlugs.value.filter((recentSlug) => recentSlug !== slug),
+    ].slice(0, 10);
+  },
+  { immediate: true }
+);
+
+const orderedSidebarPosts = computed(() => {
+  const recentOrder = new Map(
+    recentPostSlugs.value.map((slug, index) => [slug, index])
+  );
+  return [...(sidebarPosts.value || [])].toSorted(
+    (a, b) =>
+      (recentOrder.get(a.slug) ?? Number.POSITIVE_INFINITY) -
+      (recentOrder.get(b.slug) ?? Number.POSITIVE_INFINITY)
+  );
+});
 
 const navItems = computed<NavigationMenuItem[][]>(() => {
-  const recentPosts = (sidebarPosts.value || []).slice(0, 10).map((post) => ({
+  const recentPosts = orderedSidebarPosts.value.slice(0, 10).map((post) => ({
     label: post.title || "Untitled",
     icon: FILE_ICON,
     to: `/studio/posts/${post.slug}`,
@@ -171,7 +205,7 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
             <UBreadcrumb
               :items="breadcrumbItems"
               :ui="{ list: 'min-w-0' }"
-              class="max-w-full min-w-0 text-sm"
+              class="hidden max-w-full min-w-0 text-sm sm:block"
             >
               <template #separator>
                 <span class="text-muted px-1">/</span>
@@ -181,9 +215,25 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
         </template>
 
         <template #right>
-          <div id="navbar-actions" class="flex items-center gap-2" />
+          <div
+            id="navbar-actions"
+            class="flex min-w-0 shrink-0 items-center gap-2"
+          />
         </template>
       </UDashboardNavbar>
+      <div class="border-default border-t px-4 py-2 sm:hidden">
+        <UBreadcrumb
+          :items="breadcrumbItems"
+          :ui="{
+            list: 'min-w-0 flex-wrap text-xs',
+            link: 'max-w-[12rem] truncate',
+          }"
+        >
+          <template #separator>
+            <span class="text-muted px-1">/</span>
+          </template>
+        </UBreadcrumb>
+      </div>
 
       <main class="flex min-h-0 flex-1 flex-col overflow-y-auto">
         <slot />
