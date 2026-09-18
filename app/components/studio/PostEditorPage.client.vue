@@ -8,7 +8,6 @@ import { TableHeader } from "@tiptap/extension-table-header";
 import { TableOfContents } from "@tiptap/extension-table-of-contents";
 import { TableRow } from "@tiptap/extension-table-row";
 import { TextStyle } from "@tiptap/extension-text-style";
-import { Slice } from "@tiptap/pm/model";
 import type { EditorView } from "@tiptap/pm/view";
 
 import type { CarouselFrame } from "#shared/types/carousel";
@@ -19,6 +18,11 @@ import ImageUpload from "~/components/editor/ImageUploadExtension";
 import type { TocItem } from "~/components/editor/TableOfContents.vue";
 import TableOfContentsView from "~/components/editor/TableOfContents.vue";
 import PostNavbarActions from "~/components/studio/PostNavbarActions.vue";
+import {
+  editorHighlightColorPresets,
+  editorTextColorPresets,
+  handleMarkdownPaste,
+} from "~/utils/editor";
 
 type MarkdownEditor = Editor & {
   markdown?: {
@@ -26,34 +30,29 @@ type MarkdownEditor = Editor & {
   };
 };
 
+const editorRef = ref<{ editor?: MarkdownEditor } | null>(null);
 const editorProps = {
-  clipboardTextParser(
-    text: string,
-    _context: unknown,
-    _plain: boolean,
-    view: EditorView
-  ) {
-    const editor = (view.dom as HTMLElement & { editor?: MarkdownEditor })
-      .editor;
-    const markdown = editor?.markdown;
-    if (!markdown) {
-      return Slice.empty;
+  handlePaste(_view: EditorView, event: ClipboardEvent) {
+    const clipboard = event.clipboardData;
+    if (!clipboard || clipboard.types.includes("text/html")) {
+      return false;
     }
-    const node = view.state.schema.nodeFromJSON(markdown.parse(text));
-    return new Slice(node.content, 0, 0);
+    return handleMarkdownPaste(
+      editorRef.value?.editor,
+      clipboard.getData("text/plain")
+    );
   },
 };
 
 const toast = useToast();
-const { post, pending, savingStatus, performAutoSave, error } = usePostEditor();
+const { post, pending, savingStatus, performAutoSave, savePost, error } =
+  usePostEditor();
 const { $csrfFetch } = useNuxtApp();
 const { copy, isSupported } = useClipboard();
-const mobileTocOpen = ref(false);
 const mobileEditorDrawerOpen = ref(false);
 const isAddingTag = ref(false);
 const newTagInput = ref("");
 const tagInputRef = ref<HTMLInputElement | null>(null);
-const editorRef = ref<{ editor?: MarkdownEditor } | null>(null);
 const carouselRevision = ref(0);
 const isExporting = ref(false);
 
@@ -236,10 +235,6 @@ const handleTocSelect = (item: TocItem) => {
     el.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 };
-const handleMobileTocSelect = (item: TocItem) => {
-  handleTocSelect(item);
-  mobileTocOpen.value = false;
-};
 
 const statusText = computed(() => {
   if (savingStatus.value === "saving") {
@@ -291,7 +286,7 @@ const exportCarousel = async () => {
     };
     await performAutoSave.flush();
     if (!post.value.id || post.value.slug === "untitled") {
-      await performAutoSave();
+      await performAutoSave.flush();
     }
     const response = await window.fetch(
       `/api/studio/posts/${post.value.slug}/carousel-export`
@@ -338,9 +333,20 @@ const onContentUpdate = (val: Content) => {
   }
   performAutoSave();
 };
-const inputColor = (event: Event) => {
-  const target = event.target as HTMLInputElement | null;
-  return target?.value ?? "";
+const applyTextColor = (editor: Editor, color: string | null) => {
+  if (color) {
+    editor.chain().focus().setColor(color).run();
+    return;
+  }
+  editor.chain().focus().unsetColor().run();
+};
+
+const applyHighlightColor = (editor: Editor, color: string | null) => {
+  if (color) {
+    editor.chain().focus().toggleHighlight({ color }).run();
+    return;
+  }
+  editor.chain().focus().unsetHighlight().run();
 };
 
 const copyLink = async () => {
@@ -396,186 +402,322 @@ const deletePost = async () => {
 <template>
   <div class="bg-default relative flex h-full flex-col">
     <Teleport to="#navbar-actions">
-      <div class="hidden min-w-0 shrink-0 items-center gap-2 sm:flex">
-        <UButton :label="isCarousel ? 'Article' : 'Carousel'"
-          :icon="isCarousel ? 'i-lucide-file-text' : 'i-lucide-panels-top-left'" color="neutral" variant="outline"
-          size="sm" @click="toggleCarouselMode" />
-        <UButton v-if="isCarousel" label="Export Carousel" icon="i-lucide-download" color="primary" size="sm"
-          :loading="isExporting" :disabled="isExporting" @click="exportCarousel" />
-        <PostNavbarActions v-if="post" :post="post" :status-text="statusText" @copy-link="copyLink"
-          @copy-content="copyContent" @delete-post="deletePost"
-          @update-post="(updated) => Object.assign(post, updated)" />
+      <div class="flex min-w-0 shrink-0 items-center gap-2">
+        <div class="hidden items-center gap-2 sm:flex">
+          <UButton
+            :label="isCarousel ? 'Article' : 'Carousel'"
+            :icon="
+              isCarousel ? 'i-lucide-file-text' : 'i-lucide-panels-top-left'
+            "
+            color="neutral"
+            variant="outline"
+            size="sm"
+            @click="toggleCarouselMode"
+          />
+          <UButton
+            v-if="isCarousel"
+            label="Export Carousel"
+            icon="i-lucide-download"
+            color="primary"
+            size="sm"
+            :loading="isExporting"
+            :disabled="isExporting"
+            @click="exportCarousel"
+          />
+        </div>
+        <PostNavbarActions
+          v-if="post"
+          :post="post"
+          :status-text="statusText"
+          :save-post="savePost"
+          @copy-link="copyLink"
+          @copy-content="copyContent"
+          @delete-post="deletePost"
+        />
       </div>
     </Teleport>
     <Teleport to="body">
-      <UButton v-if="!mobileEditorDrawerOpen"
-        class="!fixed right-6 bottom-[calc(8rem+env(safe-area-inset-bottom))] z-40 shadow-lg sm:bottom-6 sm:z-[100]"
-        icon="i-lucide-share-2" label="Graph" color="primary" @click="graphOpen = true" />
+      <UButton
+        v-if="!mobileEditorDrawerOpen && !graphOpen"
+        class="!fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 shadow-md sm:right-6 sm:bottom-6 sm:z-[100]"
+        size="sm"
+        icon="i-lucide-share-2"
+        label="Graph"
+        color="primary"
+        @click="graphOpen = true"
+      />
     </Teleport>
 
-    <UModal v-model:open="graphOpen" title="Post graph" :ui="{ content: 'sm:max-w-5xl' }">
+    <UModal
+      v-model:open="graphOpen"
+      title="Post graph"
+      :ui="{ content: 'sm:max-w-5xl' }"
+    >
       <template #body>
-        <GraphView v-if="graph" :graph="graph" :active-slug="post?.slug"
-          @select="navigateTo(`/studio/posts/${$event}`)" />
+        <GraphView
+          v-if="graph"
+          :graph="graph"
+          :active-slug="post?.slug"
+          @select="navigateTo(`/studio/posts/${$event}`)"
+        />
       </template>
     </UModal>
 
-    <TableOfContentsView :items="adminTocItems" :active-id="activeTocId" @select="handleTocSelect" />
-    <UDrawer v-if="adminTocItems.length" v-model:open="mobileTocOpen">
-      <UButton v-if="!mobileEditorDrawerOpen"
-        class="!fixed right-6 bottom-[calc(11.5rem+env(safe-area-inset-bottom))] z-40 shadow-lg sm:hidden"
-        icon="i-lucide-list" label="Contents" color="neutral" />
-      <template #content>
-        <div class="flex max-h-[70dvh] flex-col p-4">
-          <div
-            class="border-default text-highlighted mb-2 flex items-center justify-between border-b pb-2 text-sm font-semibold">
-            <span>Table of Contents</span>
-            <span class="text-muted text-xs">{{ adminTocItems.length }} sections</span>
-          </div>
-          <div class="space-y-1 overflow-y-auto">
-            <button v-for="item in adminTocItems" :key="item.id" type="button"
-              class="hover:bg-muted/60 flex min-h-11 w-full cursor-pointer items-center rounded-md px-2 py-2 text-left text-sm transition"
-              :class="activeTocId === item.id
-                ? 'text-primary bg-primary/10 font-semibold'
-                : item.level === 1
-                  ? 'text-highlighted font-medium'
-                  : 'text-muted'
-                " :style="{ paddingLeft: `${(item.level - 1) * 0.75 + 0.5}rem` }" @click="handleMobileTocSelect(item)">
-              <span class="line-clamp-2">{{ item.text }}</span>
-            </button>
-          </div>
-        </div>
-      </template>
-    </UDrawer>
+    <TableOfContentsView
+      :items="adminTocItems"
+      :active-id="activeTocId"
+      @select="handleTocSelect"
+    />
 
-    <div class="flex-1 overflow-y-auto pb-32 sm:pb-0">
+    <div
+      class="flex-1 overflow-y-auto overscroll-contain pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:pb-0"
+    >
       <div v-if="pending" class="mx-auto max-w-4xl space-y-4 px-6 py-12">
         <USkeleton class="bg-muted h-14 w-3/4 rounded-lg" />
         <USkeleton class="bg-muted h-96 w-full rounded-lg" />
       </div>
 
-      <div v-else-if="error" class="mx-auto flex max-w-4xl flex-col items-center justify-center py-24 text-center">
-        <UEmpty icon="i-lucide-file-x" title="Post not found"
-          description="The post you are trying to edit could not be found or you do not have permission.">
+      <div
+        v-else-if="error"
+        class="mx-auto flex max-w-4xl flex-col items-center justify-center py-24 text-center"
+      >
+        <UEmpty
+          icon="i-lucide-file-x"
+          title="Post not found"
+          description="The post you are trying to edit could not be found or you do not have permission."
+        >
           <template #actions>
-            <UButton to="/studio" icon="i-lucide-arrow-left" label="Back to Posts" />
+            <UButton
+              to="/studio"
+              icon="i-lucide-arrow-left"
+              label="Back to Posts"
+            />
           </template>
         </UEmpty>
       </div>
 
       <div v-else class="mx-auto max-w-4xl px-6 py-12">
-        <input v-model="post.title" type="text" aria-label="Post title" placeholder="Untitled"
-          class="text-highlighted placeholder:text-muted/40 mb-3 w-full border-none bg-transparent text-4xl font-extrabold outline-none focus:ring-0 focus:outline-none sm:pl-8 sm:text-5xl"
-          @input="performAutoSave" />
+        <input
+          v-model="post.title"
+          type="text"
+          aria-label="Post title"
+          placeholder="Untitled"
+          class="text-highlighted placeholder:text-muted/40 mb-3 w-full border-none bg-transparent text-3xl leading-tight font-extrabold outline-none focus:ring-0 focus:outline-none sm:pl-8 sm:text-5xl"
+          @input="performAutoSave"
+        />
 
         <!-- Tags below title -->
         <div class="mb-8 flex flex-wrap items-center gap-2 sm:pl-8">
-          <span v-for="tag in currentTags" :key="tag"
-            class="border-default bg-elevated/60 text-muted hover:text-highlighted group inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium transition">
+          <span
+            v-for="tag in currentTags"
+            :key="tag"
+            class="border-default bg-elevated/60 text-muted hover:text-highlighted group inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium transition"
+          >
             <span class="text-primary/70 font-semibold">#</span>{{ tag }}
-            <button type="button"
+            <button
+              type="button"
               class="text-muted/60 hover:text-error ml-0.5 inline-flex cursor-pointer items-center transition"
-              aria-label="Remove tag" @click="removeTag(tag)">
+              aria-label="Remove tag"
+              @click="removeTag(tag)"
+            >
               <UIcon name="i-lucide-x" class="size-3" />
             </button>
           </span>
 
-          <div v-if="isAddingTag"
-            class="border-default bg-elevated/80 inline-flex items-center rounded-full border px-2 py-0.5">
+          <div
+            v-if="isAddingTag"
+            class="border-default bg-elevated/80 inline-flex items-center rounded-full border px-2 py-0.5"
+          >
             <span class="text-primary/70 text-xs font-semibold">#</span>
-            <input ref="tagInputRef" v-model="newTagInput" type="text" placeholder="tag-name"
+            <input
+              ref="tagInputRef"
+              v-model="newTagInput"
+              type="text"
+              placeholder="tag-name"
               class="text-highlighted placeholder:text-muted/40 h-5 w-24 border-none bg-transparent px-1 text-xs outline-none focus:ring-0 focus:outline-none"
-              @keydown.enter.prevent="addTag" @keydown.esc="isAddingTag = false" @blur="onTagInputBlur" />
+              @keydown.enter.prevent="addTag"
+              @keydown.esc="isAddingTag = false"
+              @blur="onTagInputBlur"
+            />
           </div>
 
-          <button v-else type="button"
+          <button
+            v-else
+            type="button"
             class="border-default/60 hover:border-primary/50 text-muted hover:text-highlighted inline-flex cursor-pointer items-center gap-1 rounded-full border border-dashed px-2.5 py-0.5 text-xs font-medium transition"
-            @click="startAddingTag">
+            @click="startAddingTag"
+          >
             <UIcon name="i-lucide-plus" class="size-3" />
             <span>Add tag</span>
           </button>
         </div>
 
-        <UEditor ref="editorRef" v-slot="{ editor }" :model-value="editorValue"
-          :content-type="isCarousel ? 'json' : 'markdown'" :starter-kit="{ codeBlock: false }"
-          :extensions="editorExtensions" :handlers="customEditorHandlers" :editor-props="editorProps"
-          @update:model-value="onContentUpdate">
-          <UEditorDragHandle v-slot="{ ui }" :editor="editor" @node-change="onNodeChange">
-            <UDropdownMenu v-slot="{ open }" :modal="false" :items="getDragHandleItems(editor)"
-              :content="{ side: 'left' }" :ui="{ content: 'w-48', label: 'text-xs' }" @update:open="
+        <UEditor
+          ref="editorRef"
+          v-slot="{ editor }"
+          :model-value="editorValue"
+          :content-type="isCarousel ? 'json' : 'markdown'"
+          :starter-kit="{ codeBlock: false }"
+          :extensions="editorExtensions"
+          :handlers="customEditorHandlers"
+          :editor-props="editorProps"
+          @update:model-value="onContentUpdate"
+        >
+          <UEditorDragHandle
+            v-slot="{ ui }"
+            :editor="editor"
+            @node-change="onNodeChange"
+          >
+            <UDropdownMenu
+              v-slot="{ open }"
+              :modal="false"
+              :items="getDragHandleItems(editor)"
+              :content="{ side: 'left' }"
+              :ui="{ content: 'w-48', label: 'text-xs' }"
+              @update:open="
                 editor.chain().setMeta('lockDragHandle', $event).run()
-                ">
-              <UButton icon="i-lucide-grip-vertical" color="neutral" variant="ghost" active-variant="soft" size="sm"
-                :active="open" :class="ui.handle()" aria-label="Block actions"
-                @contextmenu.prevent="openBlockActionsFromContext" />
+              "
+            >
+              <UButton
+                icon="i-lucide-grip-vertical"
+                color="neutral"
+                variant="ghost"
+                active-variant="soft"
+                size="sm"
+                :active="open"
+                :class="ui.handle()"
+                aria-label="Block actions"
+                @contextmenu.prevent="openBlockActionsFromContext"
+              />
             </UDropdownMenu>
           </UEditorDragHandle>
-          <UEditorToolbar :editor="editor" layout="bubble" :items="editorToolbarItems">
+          <UEditorToolbar
+            :editor="editor"
+            layout="bubble"
+            :items="editorToolbarItems"
+          >
             <template #link>
               <LinkPopover :editor="editor" />
             </template>
             <template #color>
-              <UPopover :ui="{ content: 'p-2' }">
+              <UPopover :ui="{ content: 'p-3' }">
                 <UTooltip text="Text color">
-                  <UButton icon="i-lucide-palette" color="neutral" variant="ghost" size="sm" aria-label="Text color" />
+                  <UButton
+                    icon="i-lucide-palette"
+                    color="neutral"
+                    variant="ghost"
+                    size="sm"
+                    aria-label="Text color"
+                  />
                 </UTooltip>
                 <template #content>
-                  <div class="flex items-center gap-2">
-                    <label class="text-muted text-xs" for="editor-text-color">
-                      Text color
-                    </label>
-                    <input id="editor-text-color" type="color" class="size-7 cursor-pointer rounded-md border-0 p-0"
-                      @input="
-                        editor
-                          .chain()
-                          .focus()
-                          .setColor(inputColor($event))
-                          .run()
-                        " />
-                    <UButton icon="i-lucide-rotate-ccw" color="neutral" variant="ghost" size="sm"
-                      aria-label="Reset text color" @click="editor.chain().focus().unsetColor().run()" />
+                  <div
+                    class="grid grid-cols-3 gap-2"
+                    role="group"
+                    aria-label="Text color presets"
+                  >
+                    <button
+                      v-for="preset in editorTextColorPresets"
+                      :key="preset.label"
+                      type="button"
+                      class="border-default hover:bg-muted/60 focus-visible:ring-primary flex size-9 items-center justify-center rounded-md border focus-visible:ring-2"
+                      :aria-label="preset.label"
+                      :title="preset.label"
+                      @mousedown.prevent
+                      @click="applyTextColor(editor, preset.value)"
+                    >
+                      <span
+                        class="border-default bg-default flex size-6 items-center justify-center rounded-full border"
+                        :style="
+                          preset.value
+                            ? { backgroundColor: preset.value }
+                            : undefined
+                        "
+                      >
+                        <UIcon
+                          v-if="!preset.value"
+                          name="i-lucide-ban"
+                          class="text-muted size-3.5"
+                        />
+                      </span>
+                    </button>
                   </div>
                 </template>
               </UPopover>
             </template>
             <template #highlight>
-              <UPopover :ui="{ content: 'p-2' }">
+              <UPopover :ui="{ content: 'p-3' }">
                 <UTooltip text="Highlight color">
-                  <UButton icon="i-lucide-highlighter" color="neutral" variant="ghost" size="sm"
-                    aria-label="Highlight color" />
+                  <UButton
+                    icon="i-lucide-highlighter"
+                    color="neutral"
+                    variant="ghost"
+                    size="sm"
+                    aria-label="Highlight color"
+                  />
                 </UTooltip>
                 <template #content>
-                  <div class="flex items-center gap-2">
-                    <label class="text-muted text-xs" for="editor-highlight-color">
-                      Highlight
-                    </label>
-                    <input id="editor-highlight-color" type="color"
-                      class="size-7 cursor-pointer rounded-md border-0 p-0" @input="
-                        editor
-                          .chain()
-                          .focus()
-                          .toggleHighlight({ color: inputColor($event) })
-                          .run()
-                        " />
-                    <UButton icon="i-lucide-rotate-ccw" color="neutral" variant="ghost" size="sm"
-                      aria-label="Reset highlight" @click="editor.chain().focus().unsetHighlight().run()" />
+                  <div
+                    class="grid grid-cols-3 gap-2"
+                    role="group"
+                    aria-label="Highlight color presets"
+                  >
+                    <button
+                      v-for="preset in editorHighlightColorPresets"
+                      :key="preset.label"
+                      type="button"
+                      class="border-default hover:bg-muted/60 focus-visible:ring-primary flex size-9 items-center justify-center rounded-md border focus-visible:ring-2"
+                      :aria-label="preset.label"
+                      :title="preset.label"
+                      @mousedown.prevent
+                      @click="applyHighlightColor(editor, preset.value)"
+                    >
+                      <span
+                        class="border-default bg-default flex size-6 items-center justify-center rounded-full border"
+                        :style="
+                          preset.value
+                            ? { backgroundColor: preset.value }
+                            : undefined
+                        "
+                      >
+                        <UIcon
+                          v-if="!preset.value"
+                          name="i-lucide-ban"
+                          class="text-muted size-3.5"
+                        />
+                      </span>
+                    </button>
                   </div>
                 </template>
               </UPopover>
             </template>
           </UEditorToolbar>
-          <StudioMobileEditorToolbar :editor="editor" :is-carousel="isCarousel" :is-exporting="isExporting"
-            @insert-image="customEditorHandlers.image.execute(editor)"
-            @insert-table="customEditorHandlers.table.execute(editor)" @insert-carousel-separator="
-              customEditorHandlers.carouselSeparator.execute(editor)
-              " @toggle-carousel-mode="toggleCarouselMode" @export-carousel="exportCarousel"
-            @drawer-change="mobileEditorDrawerOpen = $event" />
-          <UEditorSuggestionMenu :editor="editor" :items="editorSuggestionItems" />
+          <StudioMobileEditorToolbar
+            :editor="editor"
+            :is-carousel="isCarousel"
+            :is-exporting="isExporting"
+            @insert-image="customEditorHandlers.image.execute(editor).run()"
+            @insert-table="customEditorHandlers.table.execute(editor).run()"
+            @insert-carousel-separator="
+              customEditorHandlers.carouselSeparator.execute(editor).run()
+            "
+            @toggle-carousel-mode="toggleCarouselMode"
+            @export-carousel="exportCarousel"
+            @drawer-change="mobileEditorDrawerOpen = $event"
+          />
+          <UEditorSuggestionMenu
+            :editor="editor"
+            :items="editorSuggestionItems"
+          />
         </UEditor>
         <div v-if="isCarousel && carouselFrames.length" class="mt-10 space-y-6">
           <div class="text-muted text-sm font-medium">Carousel preview</div>
-          <CarouselTemplate v-for="frame in carouselFrames"
-            :key="frame.kind === 'cover' ? 'cover' : `slide-${frame.index}`" :frame="frame" editable />
+          <CarouselTemplate
+            v-for="frame in carouselFrames"
+            :key="frame.kind === 'cover' ? 'cover' : `slide-${frame.index}`"
+            :frame="frame"
+            editable
+          />
         </div>
       </div>
     </div>

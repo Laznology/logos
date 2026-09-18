@@ -4,16 +4,15 @@ import type { PostStatus } from "~~/shared/types/post-status";
 const props = defineProps<{
   post: PostSelectType;
   statusText: string;
+  savePost: (metadata: PostSelectType["metadata"]) => Promise<void>;
 }>();
 
 const emit = defineEmits<{
   (e: "copyLink" | "copyContent" | "deletePost"): void;
-  (e: "updatePost", updated: Partial<PostSelectType>): void;
 }>();
 
 const toast = useToast();
 const { copy, isSupported } = useClipboard();
-const { $csrfFetch } = useNuxtApp();
 const isUpdatingPublish = ref(false);
 const tagsInput = ref("");
 
@@ -40,21 +39,7 @@ const saveTags = async () => {
       .filter(Boolean);
     const updatedMetadata = { ...currentMeta, tags };
 
-    const response = await $csrfFetch<{
-      success: boolean;
-      data: PostSelectType;
-    }>(`/api/posts/${props.post.slug}`, {
-      method: "PUT",
-      body: {
-        title: props.post.title,
-        content: props.post.content,
-        metadata: updatedMetadata,
-      },
-    });
-
-    if (response.data) {
-      emit("updatePost", response.data);
-    }
+    await props.savePost(updatedMetadata);
   } catch {
     toast.add({
       title: "Failed to update tags",
@@ -97,33 +82,21 @@ const updateStatus = async (status: PostStatus) => {
   isUpdatingPublish.value = true;
   try {
     const currentMeta = (props.post.metadata as Record<string, unknown>) || {};
-    const response = await $csrfFetch<{
-      success: boolean;
-      data: PostSelectType;
-    }>(`/api/posts/${props.post.slug}`, {
-      method: "PUT",
-      body: {
-        title: props.post.title,
-        content: props.post.content,
-        metadata: {
-          ...currentMeta,
-          status,
-          ...(status === "published"
-            ? { publishedAt: new Date().toISOString() }
-            : {}),
-        },
-      },
-    });
+    const updatedMetadata = {
+      ...currentMeta,
+      status,
+      ...(status === "published"
+        ? { publishedAt: new Date().toISOString() }
+        : {}),
+    };
 
-    if (response.data) {
-      emit("updatePost", response.data);
-      toast.add({
-        title:
-          status === "published" ? "Published to web!" : `Moved to ${status}`,
-        icon: status === "published" ? "i-lucide-globe" : "i-lucide-check",
-        color: status === "published" ? "success" : "neutral",
-      });
-    }
+    await props.savePost(updatedMetadata);
+    toast.add({
+      title:
+        status === "published" ? "Published to web!" : `Moved to ${status}`,
+      icon: status === "published" ? "i-lucide-globe" : "i-lucide-check",
+      color: status === "published" ? "success" : "neutral",
+    });
   } catch {
     toast.add({
       title: "Failed to update post status",

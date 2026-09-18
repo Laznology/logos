@@ -1,4 +1,5 @@
 import type { EditorSuggestionMenuItem, EditorToolbarItem } from "@nuxt/ui";
+import type { JSONContent } from "@tiptap/core";
 
 export const editorToolbarItems: EditorToolbarItem[][] = [
   [
@@ -74,6 +75,30 @@ export const editorToolbarItems: EditorToolbarItem[][] = [
     { slot: "link", tooltip: { text: "Link" } },
   ],
 ];
+
+export const editorTextColorPresets = [
+  { label: "Default", value: null },
+  { label: "Gray", value: "#5f5e5b" },
+  { label: "Red", value: "#c43d36" },
+  { label: "Orange", value: "#b8610a" },
+  { label: "Yellow", value: "#8f6b00" },
+  { label: "Green", value: "#0b6e4f" },
+  { label: "Blue", value: "#0b5cad" },
+  { label: "Purple", value: "#6940a5" },
+  { label: "Pink", value: "#a61e4d" },
+] as const;
+
+export const editorHighlightColorPresets = [
+  { label: "None", value: null },
+  { label: "Gray", value: "#e5e7eb" },
+  { label: "Red", value: "#fecaca" },
+  { label: "Orange", value: "#fed7aa" },
+  { label: "Yellow", value: "#fef08a" },
+  { label: "Green", value: "#bbf7d0" },
+  { label: "Blue", value: "#bfdbfe" },
+  { label: "Purple", value: "#ddd6fe" },
+  { label: "Pink", value: "#fbcfe8" },
+] as const;
 
 export const editorSuggestionItems: EditorSuggestionMenuItem[][] = [
   [
@@ -153,3 +178,23 @@ export const editorSuggestionItems: EditorSuggestionMenuItem[][] = [
     },
   ],
 ];
+
+interface MarkdownPasteEditor {
+  markdown?: {
+    parse: (value: string) => JSONContent;
+  };
+  commands: {
+    insertContent: (content: JSONContent) => unknown;
+  };
+}
+
+export const handleMarkdownPaste = (
+  editor: MarkdownPasteEditor | undefined,
+  text: string | undefined
+): boolean => {
+  if (!text || !editor?.markdown) {
+    return false;
+  }
+  editor.commands.insertContent(editor.markdown.parse(text));
+  return true;
+};

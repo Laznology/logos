@@ -16,6 +16,7 @@ const emit = defineEmits<{
 }>();
 
 const isHovered = ref(false);
+const isMobileOpen = ref(false);
 
 const { start: startHoverTimeout, stop: stopHoverTimeout } = useTimeoutFn(
   () => {
@@ -36,18 +37,29 @@ const onMouseLeave = () => {
 
 const onItemClick = (item: TocItem) => {
   emit("select", item);
+  isMobileOpen.value = false;
 };
 </script>
 
 <template>
   <div
     v-if="items && items.length > 0"
-    class="fixed top-24 right-4 z-40 hidden flex-col items-end md:flex lg:right-8"
+    class="fixed top-32 right-3 z-40 flex flex-col items-end md:top-24 md:right-4 lg:right-8"
     @mouseenter="onMouseEnter"
     @mouseleave="onMouseLeave"
   >
+    <UButton
+      class="md:hidden"
+      icon="i-lucide-list"
+      color="neutral"
+      variant="outline"
+      size="sm"
+      aria-label="Open table of contents"
+      :aria-expanded="isMobileOpen"
+      @click="isMobileOpen = !isMobileOpen"
+    />
     <div
-      class="flex flex-col items-end gap-1.5 p-2 transition-opacity duration-200"
+      class="hidden flex-col items-end gap-1.5 p-2 transition-opacity duration-200 md:flex"
       :class="
         isHovered
           ? 'pointer-events-none opacity-0'
@@ -82,8 +94,8 @@ const onItemClick = (item: TocItem) => {
       leave-to-class="opacity-0 translate-x-2 scale-95"
     >
       <div
-        v-if="isHovered"
-        class="border-default bg-elevated/95 shadow-elevated absolute top-0 right-0 z-50 flex max-h-[70vh] w-64 flex-col rounded-xl border p-3 backdrop-blur-md"
+        v-if="isHovered || isMobileOpen"
+        class="border-default bg-elevated/95 shadow-elevated absolute top-10 right-0 z-50 flex max-h-[70vh] w-64 flex-col rounded-xl border p-3 backdrop-blur-md md:top-0"
         @mouseenter="onMouseEnter"
         @mouseleave="onMouseLeave"
       >
