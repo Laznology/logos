@@ -17,9 +17,14 @@ export default defineProtectedHandler(async (event) => {
       statusMessage: "Post not found",
     });
   }
-  const previewHtml =
+  const preview =
     getQuery(event).preview === "1"
-      ? extractHeadingsAndHTML(post.content).html
+      ? extractHeadingsAndHTML(post.content)
       : undefined;
-  return { success: true, data: post, previewHtml };
+  return {
+    success: true,
+    data: post,
+    previewHtml: preview?.html,
+    previewReadingTime: preview?.readingTime,
+  };
 });

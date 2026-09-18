@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { CommandPaletteGroup } from "@nuxt/ui";
 
+import type { CommandPalettePreviewPost } from "~/components/CommandPalettePostPreview.vue";
 import { groupPostsByDate } from "~/utils/post-command-palette";
 
 interface PublicPostItem {
@@ -44,6 +45,10 @@ const debouncedQuery = refDebounced(searchQuery, 300);
 const selectedTag = ref("all");
 const showPreview = ref(true);
 const selectedPost = ref<PublicPostItem>();
+const previewPost = ref<CommandPalettePreviewPost>();
+const previewError = ref("");
+const previewPending = ref(false);
+let previewController: AbortController | undefined;
 
 const {
   data: postsResponse,
@@ -105,46 +110,59 @@ const groups = computed<CommandPaletteGroup[]>(() =>
   }))
 );
 
-const selectedSlug = computed(() => selectedPost.value?.slug || "");
-
-const {
-  data: previewResponse,
-  pending: previewPending,
-  error: previewFetchError,
-} = useAsyncData<PublicPostDetailResponse>(
-  () => `public-palette-preview-${selectedSlug.value}`,
-  () => {
-    if (!selectedSlug.value || !showPreview.value || !open.value) {
-      return Promise.resolve({ success: true });
-    }
-    return $fetch<PublicPostDetailResponse>(
-      `/api/public/posts/${selectedSlug.value}`
-    );
-  },
-  {
-    watch: [selectedSlug, showPreview, open],
-    immediate: false,
+async function loadPreview(post: PublicPostItem) {
+  if (
+    !showPreview.value ||
+    (selectedPost.value?.id === post.id && previewPost.value)
+  ) {
+    return;
   }
-);
 
-const previewData = computed(() => previewResponse.value?.data);
-const previewError = computed(() =>
-  previewFetchError.value ? "Preview failed to load." : ""
-);
+  selectedPost.value = post;
+  previewPost.value = undefined;
+  previewError.value = "";
+  previewPending.value = true;
+  previewController?.abort();
+  const controller = new AbortController();
+  previewController = controller;
+
+  try {
+    const doFetch = $fetch;
+    const response = await doFetch<PublicPostDetailResponse>(
+      `/api/public/posts/${post.slug}`,
+      { signal: controller.signal }
+    );
+    if (previewController === controller && response.data) {
+      previewPost.value = response.data;
+    }
+  } catch {
+    if (!controller.signal.aborted) {
+      previewError.value = "Preview failed to load.";
+    }
+  } finally {
+    if (previewController === controller) {
+      previewPending.value = false;
+    }
+  }
+}
 
 function onHighlight(payload?: { value?: unknown }) {
   const post = (payload?.value as { post?: PublicPostItem } | undefined)?.post;
   if (post) {
-    selectedPost.value = post;
+    void loadPreview(post);
   }
 }
 
 watch([allPosts, showPreview, open], ([posts, preview, isOpen]) => {
-  if (!preview || !isOpen || posts.length === 0) {
+  if (!preview || !isOpen) {
+    previewController?.abort();
     return;
   }
   const selected = posts.find((post) => post.id === selectedPost.value?.id);
-  selectedPost.value = selected || posts[0];
+  const firstPost = selected || posts[0];
+  if (firstPost) {
+    void loadPreview(firstPost);
+  }
 });
 
 defineShortcuts({
@@ -245,74 +263,23 @@ defineShortcuts({
               class="m-auto"
             />
 
-            <article
-              v-else-if="previewData"
-              class="flex min-h-0 flex-1 flex-col overflow-y-auto p-6"
+            <CommandPalettePostPreview
+              v-else-if="previewPost"
+              :post="previewPost"
             >
-              <div class="border-default space-y-3 border-b pb-4">
-                <div class="flex items-start justify-between gap-3">
-                  <h3
-                    class="text-highlighted line-clamp-2 text-xl font-bold tracking-tight"
-                  >
-                    {{ previewData.title || "Untitled" }}
-                  </h3>
-                  <UButton
-                    label="Open"
-                    icon="i-lucide-arrow-up-right"
-                    color="neutral"
-                    variant="ghost"
-                    size="xs"
-                    :to="`/posts/${previewData.slug}`"
-                    class="shrink-0"
-                    @click="open = false"
-                  />
-                </div>
-
-                <div
-                  class="text-muted flex flex-wrap items-center gap-x-2 gap-y-1 text-xs"
-                >
-                  <span
-                    v-if="previewData.author?.name"
-                    class="text-highlighted font-medium"
-                  >
-                    {{ previewData.author.name }}
-                  </span>
-                  <span v-if="previewData.author?.name" class="opacity-40"
-                    >•</span
-                  >
-                  <NuxtTime
-                    :datetime="previewData.createdAt"
-                    locale="en-US"
-                    month="short"
-                    day="numeric"
-                    year="numeric"
-                  />
-                  <span class="opacity-40">•</span>
-                  <span>{{ previewData.readingTime }} min read</span>
-                </div>
-
-                <div
-                  v-if="previewData.tags && previewData.tags.length > 0"
-                  class="flex flex-wrap items-center gap-1"
-                >
-                  <span
-                    v-for="tag in previewData.tags"
-                    :key="tag"
-                    class="border-default bg-default text-muted py-0.2 inline-flex items-center gap-0.5 rounded-full border px-2 text-[11px] font-medium"
-                  >
-                    <span class="text-primary/70 font-semibold">#</span
-                    >{{ tag }}
-                  </span>
-                </div>
-              </div>
-
-              <!-- Content Body Preview -->
-              <div
-                class="prose prose-sm dark:prose-invert max-w-none pt-4 text-xs leading-relaxed"
-                v-html="previewData.content"
-              />
-            </article>
-
+              <template #actions>
+                <UButton
+                  label="Open"
+                  icon="i-lucide-arrow-up-right"
+                  color="neutral"
+                  variant="ghost"
+                  size="xs"
+                  :to="`/posts/${previewPost.slug}`"
+                  class="shrink-0"
+                  @click="open = false"
+                />
+              </template>
+            </CommandPalettePostPreview>
             <div v-else class="text-muted m-auto p-6 text-center text-sm">
               Select an article to preview
             </div>

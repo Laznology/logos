@@ -6,6 +6,7 @@ import {
   POST_STATUS_LABELS,
   POST_STATUS_VALUES,
 } from "#shared/types/post-status";
+import type { CommandPalettePreviewPost } from "~/components/CommandPalettePostPreview.vue";
 import {
   filterPalettePosts,
   groupPostsByDate,
@@ -22,6 +23,7 @@ interface PreviewResponse {
   success: boolean;
   data: PostWithAuthorType;
   previewHtml?: string;
+  previewReadingTime?: number;
 }
 
 const open = defineModel<boolean>("open", { required: true });
@@ -32,7 +34,7 @@ const status = ref<"all" | PostStatus>("all");
 const authorId = ref("all");
 const showPreview = ref(true);
 const selectedPost = ref<PalettePost>();
-const previewHtml = ref("");
+const previewPost = ref<CommandPalettePreviewPost>();
 const previewError = ref("");
 const previewPending = ref(false);
 let previewController: AbortController | undefined;
@@ -156,18 +158,6 @@ const error = computed(() =>
 const selectedHref = computed(() =>
   selectedPost.value ? postHref(selectedPost.value) : ""
 );
-const colorMode = useColorMode();
-const previewDocument = computed(
-  () => `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&display=swap">
-  <style>
-    :root { color-scheme: ${colorMode.value}; }
-    html, body { background: transparent; color: CanvasText; font-family: "Public Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; line-height: 1.5; }
-    a { color: #14b8a6; text-decoration: none; }
-    h1, h2, h3, h4, h5, h6 { font-weight: 600; margin-top: 1.5em; margin-bottom: 0.5em; }
-    p { margin-top: 1em; margin-bottom: 1em; }
-  </style>
-  <div style="padding: 0 4px;">${previewHtml.value}</div>`
-);
 const toast = useToast();
 const { copy, isSupported } = useClipboard();
 
@@ -199,13 +189,13 @@ async function copySelectedLink() {
 async function loadPreview(post: PalettePost) {
   if (
     !showPreview.value ||
-    (selectedPost.value?.id === post.id && previewHtml.value)
+    (selectedPost.value?.id === post.id && previewPost.value)
   ) {
     return;
   }
 
   selectedPost.value = post;
-  previewHtml.value = "";
+  previewPost.value = undefined;
   previewError.value = "";
   previewPending.value = true;
   previewController?.abort();
@@ -219,7 +209,20 @@ async function loadPreview(post: PalettePost) {
       signal: controller.signal,
     });
     if (previewController === controller) {
-      previewHtml.value = response.previewHtml || "";
+      const metadata =
+        (response.data.metadata as Record<string, unknown>) || {};
+      const tags = Array.isArray(metadata.tags)
+        ? metadata.tags.filter((tag): tag is string => typeof tag === "string")
+        : undefined;
+      previewPost.value = {
+        title: response.data.title,
+        slug: response.data.slug,
+        content: response.previewHtml || "",
+        readingTime: response.previewReadingTime ?? 0,
+        tags,
+        createdAt: response.data.createdAt,
+        author: response.data.author,
+      };
     }
   } catch {
     if (!controller.signal.aborted) {
@@ -317,7 +320,7 @@ defineShortcuts({
           class="grid min-h-0 flex-1"
           :class="
             showPreview
-              ? 'md:grid-cols-[minmax(0,1fr)_minmax(18rem,0.85fr)]'
+              ? 'md:grid-cols-[minmax(0,1fr)_minmax(20rem,1fr)]'
               : 'grid-cols-1'
           "
         >
@@ -348,12 +351,12 @@ defineShortcuts({
 
           <aside
             v-if="showPreview"
-            class="border-muted bg-elevated hidden min-h-0 flex-col border-l md:flex"
+            class="border-default bg-elevated hidden min-h-0 flex-col border-l md:flex"
           >
             <div v-if="previewPending" class="space-y-4 p-6">
               <USkeleton class="h-7 w-2/3" />
               <USkeleton class="h-4 w-1/3" />
-              <USkeleton class="h-32 w-full" />
+              <USkeleton class="h-48 w-full" />
             </div>
             <UEmpty
               v-else-if="previewError"
@@ -362,19 +365,11 @@ defineShortcuts({
               :description="previewError"
               class="m-auto"
             />
-            <article
-              v-else-if="selectedPost"
-              class="flex min-h-0 flex-1 flex-col p-6"
+            <CommandPalettePostPreview
+              v-else-if="previewPost"
+              :post="previewPost"
             >
-              <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                  <h3 class="text-highlighted truncate text-xl font-semibold">
-                    {{ selectedPost.title || "Untitled" }}
-                  </h3>
-                  <p class="text-muted mt-1 text-sm">
-                    {{ selectedPost.author.name || "Unknown author" }}
-                  </p>
-                </div>
+              <template #actions>
                 <div class="flex shrink-0 gap-1">
                   <UButton
                     label="Copy link"
@@ -395,14 +390,8 @@ defineShortcuts({
                     rel="noopener noreferrer"
                   />
                 </div>
-              </div>
-              <iframe
-                :srcdoc="previewDocument"
-                sandbox=""
-                title="Post preview"
-                class="border-muted bg-elevated mt-6 min-h-0 flex-1 rounded-md border"
-              />
-            </article>
+              </template>
+            </CommandPalettePostPreview>
             <UEmpty
               v-else
               icon="i-lucide-panel-right"
