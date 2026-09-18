@@ -8,7 +8,7 @@ export default defineNuxtConfig({
   css: ["~/assets/css/main.css"],
 
   devtools: {
-    enabled: true,
+    enabled: process.env.NODE_ENV !== "production",
   },
 
   site: {
@@ -23,18 +23,17 @@ export default defineNuxtConfig({
     groups: [
       {
         userAgent: "*",
-        disallow: ["/admin", "/login", "/register"],
+        disallow: ["/studio", "/login", "/register"],
       },
     ],
   },
 
   sitemap: {
     sources: ["/api/__sitemap__/urls"],
-    exclude: ["/admin/**", "/api/**", "/login", "/register"],
+    exclude: ["/studio/**", "/api/**", "/login", "/register"],
   },
 
   routeRules: {
-    "/admin/**": { ssr: false, robots: NOINDEX_ROBOTS },
     "/login": { robots: NOINDEX_ROBOTS },
     "/register": { robots: NOINDEX_ROBOTS },
   },
@@ -109,7 +108,6 @@ export default defineNuxtConfig({
 
   experimental: {
     inlineRouteRules: true,
-    viewTransition: true,
   },
 
   nitro: {
