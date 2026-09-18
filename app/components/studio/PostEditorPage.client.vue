@@ -17,6 +17,7 @@ import type { PostGraph } from "#shared/types/graph";
 import CarouselSeparator from "~/components/editor/CarouselSeparatorExtension";
 import ImageUpload from "~/components/editor/ImageUploadExtension";
 import type { TocItem } from "~/components/editor/TableOfContents.vue";
+import TableOfContentsView from "~/components/editor/TableOfContents.vue";
 import PostNavbarActions from "~/components/studio/PostNavbarActions.vue";
 
 type MarkdownEditor = Editor & {
