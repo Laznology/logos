@@ -5,6 +5,21 @@ interface PostApiResponse {
   data: PostSelectType;
 }
 
+interface SavePayload {
+  title: string;
+  content: PostSelectType["content"];
+  metadata: PostSelectType["metadata"];
+}
+
+interface SaveRequest {
+  payload: SavePayload;
+  snapshot: string;
+}
+
+type AutoSave = (() => void) & {
+  flush: () => Promise<void>;
+};
+
 export const usePostEditor = () => {
   const route = useRoute();
   const savingStatus = ref<SavingStatus>("idle");
@@ -25,14 +40,11 @@ export const usePostEditor = () => {
   const { $csrfFetch } = useNuxtApp();
   const requestFetch = useRequestFetch();
   let savedSnapshot: string | undefined;
+  let pendingSave: SaveRequest | undefined;
+  let activeSave: SaveRequest | undefined;
   let saveInFlight: Promise<void> | undefined;
-  let resave = false;
-  const snapshot = () =>
-    JSON.stringify({
-      title: post.value.title || "Untitled",
-      content: post.value.content,
-      metadata: post.value.metadata,
-    });
+  let autoSaveTimer: ReturnType<typeof setTimeout> | undefined;
+  let hydratedPostId: string | undefined;
 
   const {
     data: postData,
@@ -47,51 +59,70 @@ export const usePostEditor = () => {
     }
   );
 
+  const captureSaveRequest = (): SaveRequest => {
+    const payload: SavePayload = {
+      title: post.value.title || "Untitled",
+      content: post.value.content,
+      metadata: post.value.metadata,
+    };
+    return { payload, snapshot: JSON.stringify(payload) };
+  };
+
   watchEffect(() => {
-    if (postData.value?.data) {
-      post.value = { ...postData.value.data };
+    const incomingPost = postData.value?.data;
+    if (!incomingPost || incomingPost.id === hydratedPostId) {
+      return;
     }
+    post.value = { ...incomingPost };
+    savedSnapshot = captureSaveRequest().snapshot;
+    pendingSave = undefined;
+    hydratedPostId = incomingPost.id;
   });
 
-  const performAutoSave = useDebounceFn(async () => {
-    if (!post.value) {
-      return;
-    }
-    const currentSnapshot = snapshot();
-    if (currentSnapshot === savedSnapshot) {
-      return;
-    }
+  const flushPendingSaves = async (): Promise<void> => {
     if (saveInFlight) {
-      resave = true;
       await saveInFlight;
+      if (pendingSave && savingStatus.value !== "error") {
+        await flushPendingSaves();
+      }
       return;
     }
 
+    const nextSave = pendingSave;
+    if (!nextSave) {
+      return;
+    }
+
+    pendingSave = undefined;
+    activeSave = nextSave;
     savingStatus.value = "saving";
+    let saved = false;
+
     saveInFlight = (async () => {
       try {
         if (post.value.id) {
-          const previousTitle = postData.value?.data.title;
-          const previousSlug = postData.value?.data.slug;
+          const requestSlug = post.value.slug;
           const response = await $csrfFetch<PostApiResponse>(
-            `/api/posts/${post.value.slug}`,
+            `/api/posts/${requestSlug}`,
             {
               method: "PUT",
-              body: {
-                title: post.value.title || "Untitled",
-                content: post.value.content,
-                metadata: post.value.metadata,
-              },
+              body: nextSave.payload,
             }
           );
+
           if (response?.data) {
+            const localSnapshot = captureSaveRequest().snapshot;
             const listsNeedRefresh =
-              response.data.title !== previousTitle ||
-              response.data.slug !== previousSlug;
-            postData.value = response;
+              response.data.title !== nextSave.payload.title ||
+              response.data.slug !== requestSlug;
             post.value.id = response.data.id;
-            post.value.metadata = response.data.metadata;
             post.value.updatedAt = response.data.updatedAt;
+            if (
+              localSnapshot === nextSave.snapshot &&
+              response.data.metadata !== undefined
+            ) {
+              post.value.metadata = response.data.metadata;
+            }
             if (
               response.data.slug &&
               response.data.slug !== slug.value &&
@@ -109,18 +140,20 @@ export const usePostEditor = () => {
         } else {
           const response = await $csrfFetch<PostApiResponse>("/api/posts", {
             method: "POST",
-            body: {
-              title: post.value.title || "Untitled",
-              content: post.value.content,
-              metadata: post.value.metadata,
-            },
+            body: nextSave.payload,
           });
 
           if (response?.data) {
+            const localSnapshot = captureSaveRequest().snapshot;
             post.value.id = response.data.id;
             post.value.slug = response.data.slug;
-            post.value.metadata = response.data.metadata;
             post.value.updatedAt = response.data.updatedAt;
+            if (
+              localSnapshot === nextSave.snapshot &&
+              response.data.metadata !== undefined
+            ) {
+              post.value.metadata = response.data.metadata;
+            }
             if (
               response.data.slug &&
               response.data.slug !== slug.value &&
@@ -133,24 +166,83 @@ export const usePostEditor = () => {
             refreshNuxtData("studio-command-palette-posts");
           }
         }
-        savedSnapshot = currentSnapshot;
+        savedSnapshot = nextSave.snapshot;
         savingStatus.value = "saved";
+        saved = true;
       } catch {
+        pendingSave ??= nextSave;
         savingStatus.value = "error";
+      } finally {
+        activeSave = undefined;
+        saveInFlight = undefined;
       }
     })();
 
     await saveInFlight;
-    saveInFlight = undefined;
-    if (resave) {
-      resave = false;
-      void performAutoSave();
+    if (saved && pendingSave) {
+      await flushPendingSaves();
     }
-  }, 1000);
+  };
+
+  const queueCurrentSave = () => {
+    const nextSave = captureSaveRequest();
+
+    if (nextSave.snapshot === savedSnapshot) {
+      return;
+    }
+    if (nextSave.snapshot === activeSave?.snapshot) {
+      return;
+    }
+    if (nextSave.snapshot === pendingSave?.snapshot) {
+      if (savingStatus.value === "error") {
+        void flushPendingSaves();
+      }
+      return;
+    }
+
+    pendingSave = nextSave;
+    void flushPendingSaves();
+  };
+
+  const scheduleAutoSave = () => {
+    if (autoSaveTimer) {
+      clearTimeout(autoSaveTimer);
+    }
+    autoSaveTimer = setTimeout(() => {
+      autoSaveTimer = undefined;
+      queueCurrentSave();
+    }, 600);
+  };
+
+  const cancelScheduledAutoSave = () => {
+    if (autoSaveTimer) {
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = undefined;
+    }
+  };
+
+  const performAutoSave = (() => {
+    scheduleAutoSave();
+  }) as AutoSave;
+
+  performAutoSave.flush = async () => {
+    cancelScheduledAutoSave();
+    queueCurrentSave();
+    await flushPendingSaves();
+  };
+
+  const savePost = async (metadata: PostSelectType["metadata"]) => {
+    post.value.metadata = metadata;
+    await performAutoSave.flush();
+    if (savingStatus.value === "error") {
+      throw new Error("Failed to save post");
+    }
+  };
 
   return {
     post,
     performAutoSave,
+    savePost,
     pending,
     error,
     savingStatus,
