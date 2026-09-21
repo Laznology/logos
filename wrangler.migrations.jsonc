@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "laznology-logos",
+  "compatibility_date": "2026-06-30",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "logos",
+      "database_id": "696a82c9-6f99-44a9-9ac0-e60e4b877f28",
+      "migrations_table": "_hub_migrations",
+      "migrations_dir": "server/db/migrations/sqlite/",
+      "migrations_pattern": "server/db/migrations/sqlite/*/migration.sql"
+    }
+  ]
+}

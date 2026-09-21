@@ -47,6 +47,8 @@ The generated bindings use these names:
 
 Do not add a manual `wrangler.jsonc` for this setup. NuxtHub generates the Worker configuration and points D1 at the SQLite migrations bundled in `.output/server/db/migrations/sqlite/`.
 
+Migrations are applied through `wrangler.migrations.jsonc`, which points at `server/db/migrations/sqlite/` in the repository, so no build is required to apply them. The generated Worker config cannot be used for this: Wrangler 4.130+ requires an explicit `migrations_pattern` for Drizzle-style `<timestamp>_<name>/migration.sql` folders and NuxtHub 0.10.x does not generate it, so `wrangler d1 migrations apply --cwd .output/server` silently finds no migrations.
+
 ## Deploy with Workers Builds
 
 This is the shortest repeatable setup:
@@ -62,7 +64,7 @@ This is the shortest repeatable setup:
 4. Set the deploy command to:
 
    ```bash
-   pnpm dlx wrangler --cwd .output/server d1 migrations apply DB --remote && pnpm dlx wrangler --cwd .output deploy --keep-vars
+   pnpm dlx wrangler d1 migrations apply DB --remote -c wrangler.migrations.jsonc && pnpm dlx wrangler --cwd .output deploy --keep-vars
    ```
 
 5. Set the project root to `.`.
@@ -89,8 +91,8 @@ pnpm build
 Check and apply pending D1 migrations, then deploy the Worker:
 
 ```bash
-pnpm dlx wrangler --cwd .output/server d1 migrations list DB --remote
-pnpm dlx wrangler --cwd .output/server d1 migrations apply DB --remote
+pnpm dlx wrangler d1 migrations list DB --remote -c wrangler.migrations.jsonc
+pnpm dlx wrangler d1 migrations apply DB --remote -c wrangler.migrations.jsonc
 pnpm dlx wrangler --cwd .output deploy --keep-vars
 ```
 
@@ -112,6 +114,7 @@ Use this order for every schema change:
 ```bash
 pnpm exec nuxt db generate --name add_profile_field
 pnpm db:migrate
+pnpm dlx wrangler d1 migrations apply DB --remote -c wrangler.migrations.jsonc
 ```
 
 Generated migrations belong in `server/db/migrations/sqlite/`. Keep one schema change per generated migration. For a migration that needs hand-written SQL, generate an empty custom migration and edit that file:
@@ -127,16 +130,34 @@ Do not put a consolidated SQL dump or a manually maintained `init-d1.sql` in `se
 If the D1 database was migrated with an older NuxtHub release, inspect the migration table before the first Wrangler deploy:
 
 ```bash
-pnpm dlx wrangler --cwd .output/server d1 execute DB --remote --command "SELECT id, name FROM _hub_migrations ORDER BY id"
+pnpm dlx wrangler d1 execute DB --remote --command "SELECT id, name FROM _hub_migrations ORDER BY id"
 ```
 
-NuxtHub documents a one-time `.sql` suffix update for migration rows created before v0.10. Apply that update only after confirming the rows belong to the old NuxtHub migration format and after taking a database backup.
+Older rows use bare folder names (e.g. `20260810082129_nosy_venus`). Wrangler only recognizes rows in its own format — `<folder>/migration.sql` — and otherwise re-applies every migration. Rename the old rows once, after confirming they correspond to existing migration folders:
+
+```bash
+pnpm dlx wrangler d1 execute DB --remote --command "UPDATE _hub_migrations SET name = name || '/migration.sql' WHERE name NOT LIKE '%/migration.sql'"
+```
+
+Take a backup first. This database contains FTS5 virtual tables, so `wrangler d1 export` fails with `cannot export databases with Virtual Tables (fts5)`; use Time Travel instead:
+
+```bash
+pnpm dlx wrangler d1 time-travel info DB
+# restore if needed:
+pnpm dlx wrangler d1 time-travel restore DB --bookmark=<bookmark>
+```
+
+Once renamed, keep using Wrangler for remote migrations. Do not switch this database to `nuxt db migrate` with D1 HTTP credentials: that path expects the bare folder names and would try to re-apply every migration.
 
 ## Troubleshooting
 
 ### `table users already exists`
 
 A duplicate SQL file is being scanned as a migration. Keep migrations under `server/db/migrations/sqlite/` and remove consolidated SQL files from `server/db/migrations`.
+
+### `No migrations to apply` but migrations are pending
+
+The generated `.output/server/wrangler.json` has no `migrations_pattern`, so Wrangler cannot see Drizzle-style `<timestamp>_<name>/migration.sql` folders. Always apply migrations with `-c wrangler.migrations.jsonc`, which sets the pattern.
 
 ### `BLOB binding not found`
 
