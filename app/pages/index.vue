@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { SiteSettings } from "#shared/types/settings";
+
 interface PublicPostListItem {
   id: string;
   title: string;
@@ -120,14 +122,23 @@ const highlightMatch = (text: string, query: string) => {
   );
 };
 
-const SITE_NAME = "Logos Publication";
+const { data: siteSettings } = await useFetch<SiteSettings>(
+  "/api/public/settings",
+  {
+    key: "public-site-settings",
+  }
+);
+
+const SITE_NAME = computed(
+  () => siteSettings.value?.title || "Logos Publication"
+);
 const SITE_DESCRIPTION =
   "A clean, distraction-free space for essays, stories, and ideas.";
 
 useSeoMeta({
-  title: `Logos — Minimal Editorial Blog`,
+  title: () => `${SITE_NAME.value} — Minimal Editorial Blog`,
   description: SITE_DESCRIPTION,
-  ogTitle: `Logos — Minimal Editorial Blog`,
+  ogTitle: () => `${SITE_NAME.value} — Minimal Editorial Blog`,
   ogDescription: SITE_DESCRIPTION,
   ogType: "website",
   twitterCard: "summary_large_image",
@@ -136,12 +147,13 @@ useSeoMeta({
 defineOgImage(
   "Publication",
   {
-    title: SITE_NAME,
+    title: SITE_NAME.value,
     description: SITE_DESCRIPTION,
-    author: SITE_NAME,
+    author: SITE_NAME.value,
+    siteName: SITE_NAME.value,
     publishedAt: "Essays · Stories · Ideas",
   },
-  { alt: SITE_NAME }
+  { alt: SITE_NAME.value }
 );
 </script>
 
@@ -199,7 +211,7 @@ defineOgImage(
           <h1
             class="text-highlighted text-3xl font-extrabold tracking-tight sm:text-4xl"
           >
-            Logos Publication
+            {{ SITE_NAME }}
           </h1>
           <p class="text-muted text-base leading-relaxed">
             Distraction-free thoughts, essays, and stories.

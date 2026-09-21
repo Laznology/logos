@@ -3,11 +3,13 @@ const {
   title = "Logos Publication",
   description = "A clean, distraction-free space for essays, stories, and ideas.",
   author = "Logos Publication",
+  siteName = "Logos Publication",
   publishedAt,
 } = defineProps<{
   title?: string;
   description?: string;
   author?: string;
+  siteName?: string;
   publishedAt?: string;
 }>();
 </script>
@@ -34,7 +36,7 @@ const {
             <path d="m3.3 7 8.7 5 8.7-5M12 22V12" />
           </svg>
         </div>
-        <p class="og-eyebrow">LOGOS PUBLICATION</p>
+        <p class="og-eyebrow">{{ siteName.toUpperCase() }}</p>
       </div>
 
       <h1 class="og-title">{{ title }}</h1>

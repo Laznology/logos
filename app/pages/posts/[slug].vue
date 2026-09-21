@@ -117,7 +117,10 @@ const seoDescription = computed(() => {
     .trim()
     .slice(0, 160);
 
-  return description || `${post.value?.title || "Read post"} on Logos`;
+  return (
+    description ||
+    `${post.value?.title || "Read post"} on ${DEFAULT_PUBLISHER.value}`
+  );
 });
 
 const copyPageAsMarkdown = async () => {
@@ -218,7 +221,9 @@ onMounted(() => {
   }
 });
 
-const DEFAULT_PUBLISHER = "Logos Publication";
+const DEFAULT_PUBLISHER = computed(
+  () => siteSettings.value?.title || "Logos Publication"
+);
 const DEFAULT_POST_TITLE = "Post";
 
 useSeoMeta({
@@ -235,7 +240,7 @@ useSeoMeta({
     post.value?.updatedAt
       ? new Date(post.value.updatedAt).toISOString()
       : undefined,
-  articleAuthor: () => [post.value?.author?.name || DEFAULT_PUBLISHER],
+  articleAuthor: () => [post.value?.author?.name || DEFAULT_PUBLISHER.value],
   twitterCard: "summary_large_image",
 });
 
@@ -244,7 +249,8 @@ defineOgImage(
   {
     title: () => (post.value?.title || DEFAULT_POST_TITLE).slice(0, 140),
     description: () => seoDescription.value,
-    author: () => post.value?.author?.name || DEFAULT_PUBLISHER,
+    author: () => post.value?.author?.name || DEFAULT_PUBLISHER.value,
+    siteName: () => DEFAULT_PUBLISHER.value,
     publishedAt: () =>
       post.value?.createdAt
         ? new Intl.DateTimeFormat("en", {
@@ -265,7 +271,7 @@ useSchemaOrg(
       description: seoDescription.value,
       datePublished: post.value?.createdAt,
       dateModified: post.value?.updatedAt,
-      author: { name: post.value?.author?.name || DEFAULT_PUBLISHER },
+      author: { name: post.value?.author?.name || DEFAULT_PUBLISHER.value },
     }),
   ])
 );
