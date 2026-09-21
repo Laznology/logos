@@ -3,33 +3,51 @@ import type { TabsItem } from "@nuxt/ui";
 
 const open = defineModel<boolean>("open", { default: false });
 const active = ref("profile");
+const { user } = useUserSession();
 
-const items: TabsItem[] = [
-  {
-    label: "Profile",
-    icon: "i-lucide-user",
-    value: "profile",
-    slot: "profile" as const,
-  },
-  {
-    label: "Security",
-    icon: "i-lucide-shield",
-    value: "security",
-    slot: "security" as const,
-  },
-  {
-    label: "Sessions",
-    icon: "i-lucide-monitor-smartphone",
-    value: "sessions",
-    slot: "sessions" as const,
-  },
-  {
-    label: "Preferences",
-    icon: "i-lucide-sliders-horizontal",
-    value: "preferences",
-    slot: "preferences" as const,
-  },
-];
+const items = computed<TabsItem[]>(() => {
+  const tabs: TabsItem[] = [
+    {
+      label: "Profile",
+      icon: "i-lucide-user",
+      value: "profile",
+      slot: "profile",
+    },
+    {
+      label: "Security",
+      icon: "i-lucide-shield",
+      value: "security",
+      slot: "security",
+    },
+    {
+      label: "Sessions",
+      icon: "i-lucide-monitor-smartphone",
+      value: "sessions",
+      slot: "sessions",
+    },
+    {
+      label: "Preferences",
+      icon: "i-lucide-sliders-horizontal",
+      value: "preferences",
+      slot: "preferences",
+    },
+  ];
+
+  if (user.value?.role === "admin") {
+    tabs.push({
+      label: "Workspace",
+      icon: "i-lucide-building-2",
+      value: "workspace",
+      slot: "workspace",
+      ui: {
+        trigger:
+          "border-l border-default sm:border-l-0 sm:border-t sm:mt-2 sm:pt-2",
+      },
+    });
+  }
+
+  return tabs;
+});
 </script>
 
 <template>
@@ -64,6 +82,9 @@ const items: TabsItem[] = [
         </template>
         <template #preferences>
           <StudioSettingsPreferencesTab />
+        </template>
+        <template #workspace>
+          <StudioSettingsWorkspaceTab />
         </template>
       </UTabs>
     </template>
