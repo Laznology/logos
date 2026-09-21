@@ -9,6 +9,8 @@ import {
 describe("site settings", () => {
   it("keeps graph and registration enabled by default", () => {
     expect(DEFAULT_SITE_SETTINGS).toEqual({
+      title: null,
+      logo: null,
       graphEnabledByDefault: true,
       registrationEnabled: true,
     });
@@ -27,5 +29,16 @@ describe("site settings", () => {
         registrationEnabled: true,
       }).success
     ).toBe(false);
+  });
+
+  it("accepts optional title and logo strings", () => {
+    expect(
+      v.safeParse(siteSettingsSchema, {
+        title: "My Workspace",
+        logo: "/images/logo.png",
+        graphEnabledByDefault: true,
+        registrationEnabled: true,
+      }).success
+    ).toBe(true);
   });
 });

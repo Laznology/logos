@@ -27,15 +27,22 @@ export const siteSettingsService = {
     }
 
     return {
+      title: row.title,
+      logo: row.logo,
       graphEnabledByDefault: row.graphEnabledByDefault,
       registrationEnabled: row.registrationEnabled,
     };
   },
 
   async update(settings: SiteSettings): Promise<SiteSettings> {
+    const title = settings.title?.trim() || null;
+    const logo = settings.logo?.trim() || null;
+
     const [row] = await db
       .update(siteSettingsTable)
       .set({
+        title,
+        logo,
         graphEnabledByDefault: settings.graphEnabledByDefault,
         registrationEnabled: settings.registrationEnabled,
         updatedAt: new Date(),
@@ -45,16 +52,19 @@ export const siteSettingsService = {
 
     if (row) {
       return {
+        title: row.title,
+        logo: row.logo,
         graphEnabledByDefault: row.graphEnabledByDefault,
         registrationEnabled: row.registrationEnabled,
       };
     }
 
+    const saved = { ...settings, title, logo };
     await db.insert(siteSettingsTable).values({
       id: SITE_SETTINGS_ID,
-      ...settings,
+      ...saved,
     });
 
-    return settings;
+    return saved;
   },
 };

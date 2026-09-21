@@ -33,6 +33,8 @@ export const userTable = sqliteTable(
 
 export const siteSettingsTable = sqliteTable("site_settings", {
   id: integer("id").primaryKey().default(1),
+  title: text("title"),
+  logo: text("logo"),
   graphEnabledByDefault: integer("graph_enabled_by_default", {
     mode: "boolean",
   })
