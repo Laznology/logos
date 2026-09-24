@@ -4,6 +4,7 @@ import { Color } from "@tiptap/extension-color";
 import Heading from "@tiptap/extension-heading";
 import { Highlight } from "@tiptap/extension-highlight";
 import Image from "@tiptap/extension-image";
+import Link from "@tiptap/extension-link";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
 import { TableKit } from "@tiptap/extension-table";
 import { TextStyle } from "@tiptap/extension-text-style";
@@ -111,6 +112,7 @@ const rendererExtensions: Extensions = [
       class: "rounded-lg max-w-full h-auto my-4",
     },
   }),
+  Link,
   ImageUploadExtension,
   Highlight.configure({ multicolor: true }),
   TextStyle,
