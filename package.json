@@ -23,12 +23,12 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
-    "@ai-sdk/vue": "^4.0.105",
-    "@iconify-json/lucide": "^1.2.133",
-    "@iconify-json/simple-icons": "^1.2.96",
+    "@ai-sdk/vue": "^4.0.114",
+    "@iconify-json/lucide": "^1.2.136",
+    "@iconify-json/simple-icons": "^1.2.97",
     "@libsql/client": "^0.18.0",
     "@nuxt/test-utils": "4.3.2",
-    "@nuxt/ui": "^4.11.1",
+    "@nuxt/ui": "^4.11.2",
     "@nuxthub/core": "^0.10.8",
     "@nuxtjs/seo": "5.3.16",
     "@tailwindcss/typography": "^0.5.20",
@@ -56,10 +56,10 @@
     "@vercel/blob": "^2.8.0",
     "@vueuse/core": "^14.4.0",
     "@vueuse/nuxt": "14.4.0",
-    "ai": "^7.0.105",
+    "ai": "^7.0.114",
     "drizzle-orm": "1.0.0-rc.5-ab785fc",
     "fflate": "^0.8.3",
-    "marked": "^18.0.13",
+    "marked": "^18.0.14",
     "nuxt": "^4.5.2",
     "nuxt-auth-utils": "0.5.30",
     "nuxt-csurf": "^1.6.6",
@@ -72,21 +72,21 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
-    "@vitest/coverage-v8": "^5.0.1",
+    "@vitest/coverage-v8": "^5.0.2",
     "@vue/test-utils": "^2.5.1",
     "drizzle-kit": "1.0.0-rc.5-ab785fc",
     "eslint-plugin-github": "6.1.2",
     "eslint-plugin-sonarjs": "^4.2.1",
     "happy-dom": "^20.14.5",
     "nuxtseo-layer-devtools": "^5.3.16",
-    "oxfmt": "^0.68.0",
-    "oxlint": "^1.83.0",
+    "oxfmt": "^0.70.0",
+    "oxlint": "^1.85.0",
     "playwright-core": "^1.63.0",
     "typescript": "6.0.3",
     "ultracite": "7.12.0",
-    "vitest": "^5.0.1",
+    "vitest": "^5.0.2",
     "vue-tsc": "^3.3.11",
-    "wrangler": "^4.134.0"
+    "wrangler": "^4.140.0"
   },
-  "packageManager": "pnpm@11.27.0"
+  "packageManager": "pnpm@11.28.0"
 }
