@@ -24,6 +24,8 @@ The commands below use `pnpm dlx wrangler`, so Wrangler does not need to be adde
 Set these variables in the Cloudflare Workers build environment:
 
 ```dotenv
+# Optional: Workers Builds is auto-detected via WORKERS_CI and uses
+# cloudflare_module automatically. Set this only to override the preset.
 NITRO_PRESET=cloudflare_module
 NUXT_HUB_CLOUDFLARE_DATABASE_ID=<d1-database-id>
 NUXT_HUB_CLOUDFLARE_R2_BUCKET_NAME=<r2-bucket-name>
@@ -165,7 +167,7 @@ Check `NUXT_HUB_CLOUDFLARE_R2_BUCKET_NAME`, rebuild with `NITRO_PRESET=cloudflar
 
 ### No `.output/server/wrangler.json`
 
-The build did not use a Cloudflare preset. Set `NITRO_PRESET=cloudflare_module` and build again.
+The build did not use a Cloudflare preset. On Workers Builds this should not happen: `WORKERS_CI=1` is injected and `nuxt.config.ts` falls back to `cloudflare_module`. For local builds, set `NITRO_PRESET=cloudflare_module` and build again.
 
 ## References
 

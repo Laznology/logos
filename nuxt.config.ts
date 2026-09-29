@@ -1,4 +1,7 @@
-const nitroPreset = process.env.NITRO_PRESET ?? "node-server";
+// Workers Builds injects WORKERS_CI=1, so CF builds don't depend on a dashboard NITRO_PRESET.
+const nitroPreset =
+  process.env.NITRO_PRESET ||
+  (process.env.WORKERS_CI ? "cloudflare_module" : "node-server");
 const isCloudflarePreset = nitroPreset.startsWith("cloudflare");
 const cloudflareR2BucketName = process.env.NUXT_HUB_CLOUDFLARE_R2_BUCKET_NAME;
 const NOINDEX_ROBOTS = "noindex, nofollow";
