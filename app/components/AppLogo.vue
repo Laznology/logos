@@ -12,9 +12,15 @@ const { data: siteSettings } = useNuxtData<SiteSettings>(
 
 const logo = computed(() => siteSettings.value?.logo || "");
 const name = computed(() => siteSettings.value?.title || "Logos");
-const markSize = computed(() =>
-  size === "sm" ? "size-6" : size === "lg" ? "size-10" : "size-8"
-);
+const markSize = computed(() => {
+  if (size === "sm") {
+    return "size-6";
+  }
+  if (size === "lg") {
+    return "size-10";
+  }
+  return "size-8";
+});
 </script>
 
 <template>

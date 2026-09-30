@@ -80,6 +80,10 @@ const { data: siteSettings } = await useFetch<SiteSettings>(
   }
 );
 
+const DEFAULT_PUBLISHER = computed(
+  () => siteSettings.value?.title || "Logos Publication"
+);
+
 const { data: graph } = await useFetch("/api/public/graph", {
   key: "public-post-graph",
   transform: (response: GraphResponse) => response.data,
@@ -221,9 +225,6 @@ onMounted(() => {
   }
 });
 
-const DEFAULT_PUBLISHER = computed(
-  () => siteSettings.value?.title || "Logos Publication"
-);
 const DEFAULT_POST_TITLE = "Post";
 
 useSeoMeta({
