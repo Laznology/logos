@@ -1,9 +1,11 @@
 <script setup lang="ts">
+const DEFAULT_SITE_NAME = "Logos Publication";
+
 const {
-  title = "Logos Publication",
+  title = DEFAULT_SITE_NAME,
   description = "A clean, distraction-free space for essays, stories, and ideas.",
-  author = "Logos Publication",
-  siteName = "Logos Publication",
+  author = DEFAULT_SITE_NAME,
+  siteName = DEFAULT_SITE_NAME,
   publishedAt,
 } = defineProps<{
   title?: string;
