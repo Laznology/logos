@@ -313,6 +313,10 @@ export async function renderCarouselFrames(
     createRenderer = () => new wasmNode.Renderer();
   } catch {
     const wasm = await import("@takumi-rs/wasm");
+    const wasmImport =
+      await import("@takumi-rs/wasm/takumi_wasm_bg.wasm?module");
+    const wasmModule = wasmImport.default ?? wasmImport;
+    await wasm.default({ module_or_path: wasmModule });
     createRenderer = () => new wasm.Renderer();
   }
   const logoSrc = frames.length > 0 ? await loadLogoSource(origin) : null;
