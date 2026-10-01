@@ -12,6 +12,10 @@ import type { EditorView } from "@tiptap/pm/view";
 
 import type { CarouselFrame } from "#shared/types/carousel";
 import { buildCarouselFrames } from "#shared/types/carousel";
+import {
+  createCarouselZip,
+  renderCarouselFrames,
+} from "../../../server/utils/carousel-export";
 import type { PostGraph } from "#shared/types/graph";
 import CarouselSeparator from "~/components/editor/CarouselSeparatorExtension";
 import ImageUpload from "~/components/editor/ImageUploadExtension";
@@ -288,15 +292,24 @@ const exportCarousel = async () => {
     if (!post.value.id || post.value.slug === "untitled") {
       await performAutoSave.flush();
     }
-    const response = await window.fetch(
-      `/api/studio/posts/${post.value.slug}/carousel-export`
+    const images = await renderCarouselFrames(
+      carouselFrames.value,
+      window.location.origin
     );
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("Carousel export failed:", response.status, errText);
-      throw new Error(`Carousel export failed: ${response.status} ${errText}`);
-    }
-    const blob = await response.blob();
+    const zip = createCarouselZip(
+      images.map((data, index) => ({
+        name:
+          index === 0
+            ? "cover.png"
+            : `slide-${String(index).padStart(2, "0")}.png`,
+        data,
+      }))
+    );
+    const zipBuffer = zip.buffer.slice(
+      zip.byteOffset,
+      zip.byteOffset + zip.byteLength
+    ) as ArrayBuffer;
+    const blob = new Blob([zipBuffer], { type: "application/zip" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;

@@ -7,7 +7,8 @@ const nitroPreset =
   process.env.NITRO_PRESET ||
   (process.env.WORKERS_CI ? "cloudflare_module" : "node-server");
 const isCloudflarePreset = nitroPreset.startsWith("cloudflare");
-const carouselRenderer = path.resolve(
+const carouselRenderer = path.resolve("renderers/carousel-renderer.browser.ts");
+const serverCarouselRenderer = path.resolve(
   `renderers/carousel-renderer.${isCloudflarePreset ? "wasm" : "node"}.ts`
 );
 const cloudflareR2BucketName = process.env.NUXT_HUB_CLOUDFLARE_R2_BUCKET_NAME;
@@ -185,7 +186,7 @@ export default defineNuxtConfig({
   nitro: {
     preset: nitroPreset,
     alias: {
-      "#carousel-renderer": carouselRenderer,
+      "#carousel-renderer": serverCarouselRenderer,
     },
     ...(isCloudflarePreset ? {} : { exportConditions: ["!unwasm"] }),
     minify: true,

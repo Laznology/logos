@@ -1,13 +1,11 @@
 import init, { Renderer } from "@takumi-rs/wasm";
+import wasmUrl from "@takumi-rs/wasm/vite";
 
 let initialized = false;
 
 export async function createCarouselRenderer() {
   if (!initialized) {
-    const wasmImport =
-      await import("@takumi-rs/wasm/takumi_wasm_bg.wasm?module");
-    const wasmModule = wasmImport.default;
-    await init({ module_or_path: wasmModule });
+    await init(wasmUrl);
     initialized = true;
   }
 
