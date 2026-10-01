@@ -1,6 +1,7 @@
-import type { Renderer as TakumiRenderer } from "@takumi-rs/wasm";
 import type { JSONContent } from "@tiptap/core";
 import { zipSync } from "fflate";
+
+import { createCarouselRenderer } from "#carousel-renderer";
 
 import type { CarouselFrame } from "../../shared/types/carousel";
 import { CAROUSEL_HEIGHT, CAROUSEL_WIDTH } from "../../shared/types/carousel";
@@ -306,32 +307,17 @@ export async function renderCarouselFrames(
   frames: CarouselFrame[],
   origin: string
 ): Promise<Uint8Array[]> {
-  // ponytail: platform-specific rendering module — @takumi-rs/wasm in Cloudflare Workers, @takumi-rs/wasm/node in Node.js/tests
-  let createRenderer: () => TakumiRenderer;
-  try {
-    const wasmNode = await import("@takumi-rs/wasm/node");
-    createRenderer = () => new wasmNode.Renderer();
-  } catch {
-    const wasm = await import("@takumi-rs/wasm");
-    const wasmImport =
-      await import("@takumi-rs/wasm/takumi_wasm_bg.wasm?module");
-    const wasmModule = wasmImport.default ?? wasmImport;
-    await wasm.default({ module_or_path: wasmModule });
-    createRenderer = () => new wasm.Renderer();
-  }
   const logoSrc = frames.length > 0 ? await loadLogoSource(origin) : null;
   const images: Uint8Array[] = [];
   // Takumi can return another frame's buffer when a renderer is reused.
   for (const frame of frames) {
     // oxlint-disable-next-line no-await-in-loop -- isolated renderers preserve frame order.
-    const rendered = await createRenderer().render(
-      frameNode(frame, origin, logoSrc),
-      {
-        width: CAROUSEL_WIDTH,
-        height: CAROUSEL_HEIGHT,
-        format: "png",
-      }
-    );
+    const renderer = await createCarouselRenderer();
+    const rendered = await renderer.render(frameNode(frame, origin, logoSrc), {
+      width: CAROUSEL_WIDTH,
+      height: CAROUSEL_HEIGHT,
+      format: "png",
+    });
     images.push(Uint8Array.from(new Uint8Array(rendered)));
   }
   return images;

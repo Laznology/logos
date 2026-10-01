@@ -1,14 +1,24 @@
-// Workers Builds injects WORKERS_CI=1, so CF builds don't depend on a dashboard NITRO_PRESET.
+import path from "node:path";
+
 const nitroPreset =
   process.env.NITRO_PRESET ||
   (process.env.WORKERS_CI ? "cloudflare_module" : "node-server");
 const isCloudflarePreset = nitroPreset.startsWith("cloudflare");
+const carouselRenderer = path.resolve(
+  `renderers/carousel-renderer.${isCloudflarePreset ? "wasm" : "node"}.ts`
+);
 const cloudflareR2BucketName = process.env.NUXT_HUB_CLOUDFLARE_R2_BUCKET_NAME;
 const NOINDEX_ROBOTS = "noindex, nofollow";
 export default defineNuxtConfig({
   compatibilityDate: "2026-06-30",
   ssr: true,
   css: ["~/assets/css/main.css"],
+
+  runtimeConfig: {
+    session: {
+      password: "",
+    },
+  },
 
   devtools: {
     enabled: process.env.NODE_ENV !== "production",
@@ -113,8 +123,15 @@ export default defineNuxtConfig({
     inlineRouteRules: true,
   },
 
+  alias: {
+    "#carousel-renderer": carouselRenderer,
+  },
+
   nitro: {
     preset: nitroPreset,
+    alias: {
+      "#carousel-renderer": carouselRenderer,
+    },
     ...(isCloudflarePreset ? {} : { exportConditions: ["!unwasm"] }),
     minify: true,
     prerender: {
