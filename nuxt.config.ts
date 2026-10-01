@@ -1,4 +1,7 @@
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+
+import { defineNuxtModule } from "nuxt/kit";
 
 const nitroPreset =
   process.env.NITRO_PRESET ||
@@ -9,6 +12,57 @@ const carouselRenderer = path.resolve(
 );
 const cloudflareR2BucketName = process.env.NUXT_HUB_CLOUDFLARE_R2_BUCKET_NAME;
 const NOINDEX_ROBOTS = "noindex, nofollow";
+const CLOUDFLARE_OBSERVABILITY = {
+  enabled: true,
+  logs: {
+    enabled: true,
+    head_sampling_rate: 1,
+    invocation_logs: true,
+    persist: true,
+  },
+  traces: {
+    enabled: true,
+    head_sampling_rate: 1,
+    persist: true,
+  },
+  issue_detection: {
+    enabled: true,
+  },
+};
+const cloudflareObservabilityModule = defineNuxtModule({
+  meta: { name: "cloudflare-observability" },
+  setup(_options, nuxt) {
+    if (!isCloudflarePreset || nuxt.options._prepare || nuxt.options.dev) {
+      return;
+    }
+
+    nuxt.hook("close", async () => {
+      const wranglerPath = path.join(
+        nuxt.options.rootDir,
+        ".output/server/wrangler.json"
+      );
+      const config = JSON.parse(await readFile(wranglerPath, "utf-8"));
+      config.observability = {
+        ...config.observability,
+        ...CLOUDFLARE_OBSERVABILITY,
+        logs: {
+          ...config.observability?.logs,
+          ...CLOUDFLARE_OBSERVABILITY.logs,
+        },
+        traces: {
+          ...config.observability?.traces,
+          ...CLOUDFLARE_OBSERVABILITY.traces,
+        },
+        issue_detection: {
+          ...config.observability?.issue_detection,
+          ...CLOUDFLARE_OBSERVABILITY.issue_detection,
+        },
+      };
+      await writeFile(wranglerPath, JSON.stringify(config, null, 2));
+    });
+  },
+});
+
 export default defineNuxtConfig({
   compatibilityDate: "2026-06-30",
   ssr: true,
@@ -102,6 +156,7 @@ export default defineNuxtConfig({
   modules: [
     "@nuxt/ui",
     "@nuxthub/core",
+    cloudflareObservabilityModule,
     "nuxt-csurf",
     "@vueuse/nuxt",
     "nuxt-auth-utils",
