@@ -21,7 +21,7 @@ describe("carousel ZIP export", () => {
   it("renders a fixed-size PNG frame", async () => {
     const [png] = await renderCarouselFrames(
       [{ kind: "cover", title: "Render me" }],
-      ""
+      "https://example.com"
     );
 
     expect(png.slice(0, 8)).toEqual(
