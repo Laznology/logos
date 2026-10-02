@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Editor } from "@tiptap/vue-3";
 import "@tiptap/extension-link";
+import type { Editor } from "@tiptap/vue-3";
 
 const props = defineProps<{
   editor: Editor;
@@ -102,60 +102,26 @@ function handleKeyDown(event: KeyboardEvent) {
 
 <template>
   <UPopover v-model:open="open" :ui="{ content: 'p-0.5' }">
-    <UTooltip text="Link">
-      <UButton
-        icon="i-lucide-link"
-        color="neutral"
-        active-color="primary"
-        variant="ghost"
-        active-variant="soft"
-        size="sm"
-        :active="active"
-        :disabled="disabled"
-      />
+    <UTooltip text="Insert link">
+      <UButton icon="i-lucide-link" color="neutral" active-color="primary" variant="ghost" active-variant="soft"
+        size="sm" :active="active" :disabled="disabled" />
     </UTooltip>
 
     <template #content>
       <div class="flex items-center gap-1 p-1">
-        <UInput
-          v-model="url"
-          name="url"
-          type="url"
-          variant="none"
-          placeholder="Paste a link..."
-          class="w-60 text-xs"
-          @keydown="handleKeyDown"
-        />
+        <UInput v-model="url" name="url" type="url" variant="none" placeholder="Paste a link..." class="w-60 text-xs"
+          @keydown="handleKeyDown" />
 
-        <UButton
-          icon="i-lucide-corner-down-left"
-          variant="ghost"
-          size="sm"
-          :disabled="!url && !active"
-          title="Apply link"
-          @click="setLink"
-        />
+        <UButton icon="i-lucide-corner-down-left" variant="ghost" size="sm" :disabled="!url && !active"
+          title="Apply link" @click="setLink" />
 
         <USeparator orientation="vertical" class="mx-1 h-6" />
 
-        <UButton
-          icon="i-lucide-external-link"
-          variant="ghost"
-          size="sm"
-          :disabled="!url"
-          title="Open in new window"
-          @click="openLink"
-        />
+        <UButton icon="i-lucide-external-link" variant="ghost" size="sm" :disabled="!url" title="Open in new window"
+          @click="openLink" />
 
-        <UButton
-          icon="i-lucide-trash"
-          variant="ghost"
-          color="error"
-          size="sm"
-          :disabled="!active"
-          title="Remove link"
-          @click="removeLink"
-        />
+        <UButton icon="i-lucide-trash" variant="ghost" color="error" size="sm" :disabled="!active" title="Remove link"
+          @click="removeLink" />
       </div>
     </template>
   </UPopover>
