@@ -30,6 +30,7 @@ APP_PORT=3000
 NUXT_SITE_URL=https://example.com
 NUXT_SESSION_PASSWORD=replace-with-a-random-string-at-least-32-characters
 NUXT_OG_IMAGE_SECRET=replace-with-another-random-secret
+BETTER_AUTH_SECRET=replace-with-a-random-string-at-least-32-characters
 ```
 
 Generate secrets instead of inventing them:
@@ -146,6 +147,7 @@ docker compose up -d
    - `NUXT_SITE_URL`
    - `NUXT_SESSION_PASSWORD`
    - `NUXT_OG_IMAGE_SECRET`
+   - `BETTER_AUTH_SECRET`
 5. Deploy the stack.
 
 Portainer builds the image from the repository and starts the same Compose service. For updates, use **Pull and redeploy**.

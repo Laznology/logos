@@ -47,7 +47,8 @@ Create an account at `/register`, then sign in at `/login`.
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `NUXT_SITE_URL` | Production | Canonical URL used by SEO and sitemap generation |
-| `NUXT_SESSION_PASSWORD` | Yes | Session encryption password, at least 32 characters |
+| `BETTER_AUTH_SECRET` | Yes | Auth secret, at least 32 characters (`openssl rand -base64 32`) |
+| `BETTER_AUTH_URL` | Production | Public URL used for auth callbacks (falls back to `NUXT_SITE_URL`) |
 | `NUXT_OG_IMAGE_SECRET` | Production | Secret used by the Open Graph image endpoint |
 | `NUXT_PUBLIC_PARTYKIT_HOST` | Optional | Enables real-time collaboration |
 | `NUXT_HUB_CLOUDFLARE_DATABASE_ID` | Cloudflare only | D1 database ID read during the Worker build |

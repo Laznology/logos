@@ -27,9 +27,11 @@ export const signUpSchema = v.object({
   ),
 });
 
+/** The shape every authenticated request carries through to services. */
 export interface AuthUser {
   id: string;
   role: Role;
+  organizationId: string | null;
 }
 
 export const updateProfileSchema = v.object({

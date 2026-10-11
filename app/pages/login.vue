@@ -1,23 +1,19 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from "@nuxt/ui";
-import { FetchError } from "ofetch";
 import type { SiteSettings } from "~~/shared/types/settings";
 
 definePageMeta({
   middleware: "guest",
 });
 
-const { $csrfFetch } = useNuxtApp();
-
-const { fetch: refreshSession } = useUserSession();
+const { signIn } = authClient;
+const session = authClient.useSession();
 const toast = useToast();
 const isLoading = ref(false);
 
 const { data: siteSettings } = await useFetch<SiteSettings>(
   "/api/public/settings",
-  {
-    key: "public-site-settings",
-  }
+  { key: "public-site-settings" }
 );
 
 const fields = [
@@ -37,43 +33,31 @@ const fields = [
   },
 ];
 
-const providers = [
-  {
-    label: "Continue with GitHub",
-    icon: "i-simple-icons-github",
-    color: "neutral" as const,
-    to: "/auth/github",
-  },
-];
-
 async function onSubmit(event: FormSubmitEvent<SignInType>) {
   isLoading.value = true;
-  try {
-    await $csrfFetch("/api/auth/sign-in", {
-      method: "POST",
-      body: event.data,
-    });
+  const { identifier, password } = event.data;
+  // ponytail: the username plugin adds its own endpoint, so pick based on shape.
+  const { error } = identifier.includes("@")
+    ? await signIn.email({ email: identifier, password })
+    : await signIn.username({ username: identifier, password });
+  isLoading.value = false;
 
-    await refreshSession();
-
+  if (error) {
     toast.add({
-      title: "Welcome back!",
-      description: "You have signed in successfully.",
-      color: "success",
+      title: "Authentication Failed",
+      description: error.message || "Invalid credentials",
+      color: "error",
     });
-
-    await navigateTo("/");
-  } catch (error) {
-    if (error instanceof FetchError) {
-      toast.add({
-        title: "Authentication Failed",
-        description: error.statusMessage || "An unexpected error occurred.",
-        color: "error",
-      });
-    }
-  } finally {
-    isLoading.value = false;
+    return;
   }
+
+  await session.value.refetch();
+  toast.add({
+    title: "Welcome back!",
+    description: "You have signed in successfully.",
+    color: "success",
+  });
+  await navigateTo("/");
 }
 </script>
 
@@ -84,7 +68,6 @@ async function onSubmit(event: FormSubmitEvent<SignInType>) {
       description="Enter your credentials or use a social provider to access your workspace."
       icon="i-lucide-lock"
       :fields="fields"
-      :providers="providers"
       :schema="signInSchema"
       :loading="isLoading"
       submit-button-label="Sign In"

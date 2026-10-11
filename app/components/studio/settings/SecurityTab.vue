@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from "@nuxt/ui";
-import { FetchError } from "ofetch";
 import * as v from "valibot";
-
-import { changePasswordSchema } from "#shared/types/auth";
 
 const ConfirmSchema = v.pipe(
   v.object({
@@ -26,7 +23,6 @@ const ConfirmSchema = v.pipe(
 
 type ConfirmType = v.InferInput<typeof ConfirmSchema>;
 
-const { $csrfFetch } = useNuxtApp();
 const toast = useToast();
 const form = reactive({
   currentPassword: "",
@@ -37,32 +33,30 @@ const isSaving = ref(false);
 
 async function onSubmit(_: FormSubmitEvent<ConfirmType>) {
   isSaving.value = true;
-  try {
-    await $csrfFetch("/api/account/password", {
-      method: "PUT",
-      body: {
-        currentPassword: form.currentPassword,
-        newPassword: form.newPassword,
-      },
-    });
-    form.currentPassword = "";
-    form.newPassword = "";
-    form.confirmPassword = "";
-    toast.add({
-      title: "Password updated",
-      description: "Other sessions have been signed out.",
-      color: "success",
-    });
-  } catch (error) {
+  const { error } = await authClient.changePassword({
+    currentPassword: form.currentPassword,
+    newPassword: form.newPassword,
+    revokeOtherSessions: true,
+  });
+  isSaving.value = false;
+
+  if (error) {
     toast.add({
       title: "Something went wrong",
-      description:
-        error instanceof FetchError ? error.statusMessage : "Unexpected error",
+      description: error.message,
       color: "error",
     });
-  } finally {
-    isSaving.value = false;
+    return;
   }
+
+  form.currentPassword = "";
+  form.newPassword = "";
+  form.confirmPassword = "";
+  toast.add({
+    title: "Password updated",
+    description: "Other sessions have been signed out.",
+    color: "success",
+  });
 }
 </script>
 

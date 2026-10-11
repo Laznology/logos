@@ -3,7 +3,8 @@ import type { TabsItem } from "@nuxt/ui";
 
 const open = defineModel<boolean>("open", { default: false });
 const active = ref("profile");
-const { user } = useUserSession();
+const session = authClient.useSession();
+const user = computed(() => session.value.data?.user);
 
 const items = computed<TabsItem[]>(() => {
   const tabs: TabsItem[] = [

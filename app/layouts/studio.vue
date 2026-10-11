@@ -10,6 +10,13 @@ const isCommandPaletteOpen = useState(
 );
 const isSettingsOpen = ref(false);
 
+const { signOut } = authClient;
+
+async function handleSignOut() {
+  await signOut();
+  await navigateTo("/login");
+}
+
 const colorMode = useColorMode();
 const toggleTheme = () => {
   colorMode.preference = colorMode.value === "dark" ? "light" : "dark";
@@ -133,6 +140,7 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
             @click="isCollapsed = true"
           />
         </div>
+        <StudioWorkspaceSwitcher v-if="!collapsed" class="mt-2 w-full" />
       </template>
 
       <template #default="{ collapsed }">
@@ -166,6 +174,14 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
             <span>Logos Studio</span>
           </div>
           <div class="flex items-center gap-1">
+            <UButton
+              variant="ghost"
+              color="neutral"
+              size="sm"
+              icon="i-lucide-log-out"
+              aria-label="Sign out"
+              @click="handleSignOut"
+            />
             <UButton
               variant="ghost"
               color="neutral"
