@@ -19,20 +19,31 @@ describe("CarouselTemplate", () => {
       props: {
         frame: { kind: "cover", title: "A useful idea" },
       },
+      attachTo: document.body,
     });
 
     const frame = wrapper.find(".carousel-frame");
     const styles = getComputedStyle(frame.element);
 
-    expect(styles.backgroundColor).toBe("rgb(10, 10, 10)");
-    expect(styles.color).toBe("rgb(250, 248, 245)");
-    expect(styles.backgroundImage).toContain("data:image/svg+xml");
+    // happy-dom serializes authored colors as-is (hex/hsl), not rgb().
+    expect(styles.backgroundColor).toBe("#0a0a0a");
+    expect(styles.color).toBe("#faf8f5");
+    // happy-dom omits background-image from both computed style and CSSOM, so
+    // read the authored .carousel-frame rule text and assert its noise texture.
+    const css = [...document.querySelectorAll("style")]
+      .map((style) => style.textContent ?? "")
+      .join("\n");
+    const frameRule = css.slice(css.indexOf(".carousel-frame"));
+    expect(frameRule.slice(0, frameRule.indexOf("}"))).toContain(
+      "feTurbulence"
+    );
   });
   it("uses the logo and divider in both frame footers", async () => {
     const cover = await mountSuspended(CarouselTemplate, {
       props: {
         frame: { kind: "cover", title: "A useful idea" },
       },
+      attachTo: document.body,
     });
     const slide = await mountSuspended(CarouselTemplate, {
       props: {
@@ -47,6 +58,7 @@ describe("CarouselTemplate", () => {
           ],
         },
       },
+      attachTo: document.body,
     });
 
     expect(cover.find(".carousel-cover-footer").text()).not.toContain(
@@ -76,7 +88,7 @@ describe("CarouselTemplate", () => {
     expect(
       getComputedStyle(slide.find(".carousel-slide-footer").element)
         .borderTopColor
-    ).toBe("rgba(250, 248, 245, 0.18)");
+    ).toBe("hsla(36, 33%, 97%, .18)");
   });
 
   it("renders rich body content and media", async () => {
@@ -98,6 +110,7 @@ describe("CarouselTemplate", () => {
           ],
         },
       },
+      attachTo: document.body,
     });
 
     expect(wrapper.text()).toContain("Heading");

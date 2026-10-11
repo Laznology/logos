@@ -12,10 +12,6 @@ import type { EditorView } from "@tiptap/pm/view";
 
 import type { CarouselFrame } from "#shared/types/carousel";
 import { buildCarouselFrames } from "#shared/types/carousel";
-import {
-  createCarouselZip,
-  renderCarouselFrames,
-} from "../../../server/utils/carousel-export";
 import type { PostGraph } from "#shared/types/graph";
 import CarouselSeparator from "~/components/editor/CarouselSeparatorExtension";
 import ImageUpload from "~/components/editor/ImageUploadExtension";
@@ -27,6 +23,11 @@ import {
   editorTextColorPresets,
   handleMarkdownPaste,
 } from "~/utils/editor";
+
+import {
+  createCarouselZip,
+  renderCarouselFrames,
+} from "../../../server/utils/carousel-export";
 
 type MarkdownEditor = Editor & {
   markdown?: {

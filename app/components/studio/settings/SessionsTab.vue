@@ -72,25 +72,49 @@ function deviceLabel(userAgent: string | null | undefined) {
   <div class="space-y-4">
     <div class="flex items-center justify-between">
       <h3 class="text-highlighted text-sm font-semibold">Active sessions</h3>
-      <UButton size="xs" variant="outline" color="error" icon="i-lucide-log-out" :loading="isRevokingAll"
-        @click="revokeAll">
+      <UButton
+        size="xs"
+        variant="outline"
+        color="error"
+        icon="i-lucide-log-out"
+        :loading="isRevokingAll"
+        @click="revokeAll"
+      >
         Revoke all
       </UButton>
     </div>
 
     <div v-if="pending" class="space-y-2">
-      <USkeleton v-for="i in 2" :key="i" class="bg-muted h-14 w-full rounded-lg" />
+      <USkeleton
+        v-for="i in 2"
+        :key="i"
+        class="bg-muted h-14 w-full rounded-lg"
+      />
     </div>
 
     <ul v-else class="divide-default divide-y">
-      <li v-for="item in data" :key="item.id" class="flex items-center justify-between gap-3 py-3">
+      <li
+        v-for="item in data"
+        :key="item.id"
+        class="flex items-center justify-between gap-3 py-3"
+      >
         <div class="flex min-w-0 items-center gap-3">
-          <UIcon name="i-lucide-monitor-smartphone" class="text-muted size-5 shrink-0" />
+          <UIcon
+            name="i-lucide-monitor-smartphone"
+            class="text-muted size-5 shrink-0"
+          />
           <div class="min-w-0">
-            <p class="text-highlighted flex items-center gap-2 text-sm font-medium">
+            <p
+              class="text-highlighted flex items-center gap-2 text-sm font-medium"
+            >
               {{ deviceLabel(item.userAgent) }}
-              <UBadge v-if="item.token === currentToken" label="This device" color="primary" variant="subtle"
-                size="sm" />
+              <UBadge
+                v-if="item.token === currentToken"
+                label="This device"
+                color="primary"
+                variant="subtle"
+                size="sm"
+              />
             </p>
             <p class="text-muted truncate text-xs">
               {{ item.ipAddress || "unknown IP" }} ·
@@ -98,7 +122,12 @@ function deviceLabel(userAgent: string | null | undefined) {
             </p>
           </div>
         </div>
-        <UButton size="xs" variant="ghost" color="error" @click="revoke(item.token)">
+        <UButton
+          size="xs"
+          variant="ghost"
+          color="error"
+          @click="revoke(item.token)"
+        >
           Revoke
         </UButton>
       </li>

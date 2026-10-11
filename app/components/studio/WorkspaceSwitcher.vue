@@ -56,7 +56,9 @@ const items = computed(() => [
   (organizations.value.data ?? []).map((org) => ({
     label: org.name,
     icon:
-      active.value.data?.id === org.id ? "i-lucide-check" : "i-lucide-building-2",
+      active.value.data?.id === org.id
+        ? "i-lucide-check"
+        : "i-lucide-building-2",
     onSelect: () => switchTo(org.id),
   })),
   [
@@ -74,19 +76,36 @@ const items = computed(() => [
 
 <template>
   <UDropdownMenu :items="items" :content="{ align: 'start' }">
-    <UButton variant="ghost" color="neutral" size="sm" class="max-w-full justify-start" icon="i-lucide-building-2"
-      :label="active.data?.name || 'Workspace'" trailing-icon="i-lucide-chevrons-up-down" />
+    <UButton
+      variant="ghost"
+      color="neutral"
+      size="sm"
+      class="max-w-full justify-start"
+      icon="i-lucide-building-2"
+      :label="active.data?.name || 'Workspace'"
+      trailing-icon="i-lucide-chevrons-up-down"
+    />
   </UDropdownMenu>
 
   <UModal v-model:open="isCreatingOpen" title="New workspace">
     <template #body>
       <UFormField label="Name">
-        <UInput v-model="newName" placeholder="My Workspace" class="w-full" autofocus
-          @keydown.enter="createWorkspace" />
+        <UInput
+          v-model="newName"
+          placeholder="My Workspace"
+          class="w-full"
+          autofocus
+          @keydown.enter="createWorkspace"
+        />
       </UFormField>
     </template>
     <template #footer>
-      <UButton label="Create" :loading="isCreating" :disabled="!newName.trim()" @click="createWorkspace" />
+      <UButton
+        label="Create"
+        :loading="isCreating"
+        :disabled="!newName.trim()"
+        @click="createWorkspace"
+      />
     </template>
   </UModal>
 </template>

@@ -33,3 +33,6 @@ playwright-report/
 CLAUDE.md
 PRODUCT.md
 test-results/
+.vitest/
+
+.data-e2e

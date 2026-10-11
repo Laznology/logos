@@ -16,7 +16,7 @@ test("exports a carousel ZIP from the editor", async ({ page, goto }) => {
   await page.locator('button[type="submit"]').click();
 
   await page.waitForURL("/");
-  await goto("/admin/posts/untitled", { waitUntil: "hydration" });
+  await goto("/studio/posts/untitled", { waitUntil: "hydration" });
 
   await page.getByRole("button", { name: /^carousel$/i }).click();
 

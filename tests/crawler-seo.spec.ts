@@ -7,7 +7,8 @@ test("crawler endpoints expose only public pages", async ({ page }) => {
   ]);
 
   expect(robots.status()).toBe(200);
-  expect(await robots.text()).toContain("Disallow: /admin");
+  // The studio area is the private section excluded from crawling.
+  expect(await robots.text()).toContain("Disallow: /studio");
   expect(sitemap.status()).toBe(200);
-  expect(await sitemap.text()).not.toContain("/admin");
+  expect(await sitemap.text()).not.toContain("/studio");
 });
