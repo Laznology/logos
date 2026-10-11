@@ -12,12 +12,13 @@ interface PostFilters {
   authorId?: string;
 }
 
-const getAuthCondition = (user: AuthUser) => {
-  if (user.role === "admin" || user.role === "editor") {
-    return undefined;
-  }
-  return eq(postTable.userId, user.id);
-};
+// ponytail: posts live in a workspace (organization), so access is scoped by the
+// active organization rather than by global role. Users without a workspace see
+// nothing.
+const getAuthCondition = (user: AuthUser) =>
+  user.organizationId
+    ? eq(postTable.organizationId, user.organizationId)
+    : sql`0 = 1`;
 
 const getFilterCondition = ({ status, authorId }: PostFilters) => {
   let statusCondition: SQL<unknown> | undefined;
@@ -186,6 +187,7 @@ class PostService {
         slug,
         content,
         userId: user.id,
+        organizationId: user.organizationId,
         metadata: input?.metadata || {},
       })
       .returning();

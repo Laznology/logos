@@ -29,6 +29,7 @@ export const usePostEditor = () => {
   const post = ref<PostSelectType>({
     id: "",
     userId: "",
+    organizationId: null,
     title: "",
     slug: "untitled",
     metadata: { status: "draft" },

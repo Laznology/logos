@@ -3,6 +3,14 @@ import path from "node:path";
 
 import { defineNuxtModule } from "nuxt/kit";
 
+// ponytail: nuxt-csurf augments `nitropack`, but Nuxt resolves routeRules from
+// `nitropack/types`, so the `csurf` rule needs declaring on both.
+declare module "nitropack/types" {
+  interface NitroRouteConfig {
+    csurf?: Record<string, unknown> | false;
+  }
+}
+
 const nitroPreset =
   process.env.NITRO_PRESET ||
   (process.env.WORKERS_CI ? "cloudflare_module" : "node-server");
@@ -69,12 +77,6 @@ export default defineNuxtConfig({
   ssr: true,
   css: ["~/assets/css/main.css"],
 
-  runtimeConfig: {
-    session: {
-      password: "",
-    },
-  },
-
   devtools: {
     enabled: process.env.NODE_ENV !== "production",
   },
@@ -104,6 +106,9 @@ export default defineNuxtConfig({
   routeRules: {
     "/login": { robots: NOINDEX_ROBOTS },
     "/register": { robots: NOINDEX_ROBOTS },
+    // better-auth does its own origin/CSRF checks and is called from the client
+    // with a JSON body, so the csurf cookie dance does not apply here.
+    "/api/auth/**": { csurf: false },
   },
 
   icon: {
@@ -160,7 +165,6 @@ export default defineNuxtConfig({
     cloudflareObservabilityModule,
     "nuxt-csurf",
     "@vueuse/nuxt",
-    "nuxt-auth-utils",
     "@nuxtjs/seo",
   ],
 

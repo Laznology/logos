@@ -1,39 +1,24 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from "@nuxt/ui";
-import { FetchError } from "ofetch";
 
-import { updateEmailSchema, updateProfileSchema } from "#shared/types/auth";
+import { updateProfileSchema } from "#shared/types/auth";
 
 const { $csrfFetch } = useNuxtApp();
+
+const { updateUser } = authClient;
+const session = authClient.useSession();
 const toast = useToast();
-function showError(error: unknown) {
-  toast.add({
-    title: "Something went wrong",
-    description:
-      error instanceof FetchError ? error.statusMessage : "Unexpected error",
-    color: "error",
-  });
-}
 const fileInput = ref<HTMLInputElement>();
 
-const { data: profile, refresh: refreshProfile } = useFetch<{
-  success: boolean;
-  data: {
-    id: string;
-    name: string;
-    email: string;
-    username: string;
-    avatar: string | null;
-    avatarUrl: string | null;
-  };
-}>("/api/account/profile", {
-  key: "account-profile",
-  lazy: true,
-});
+const user = computed(() => session.value.data?.user);
+// better-auth exposes the avatar as `image`; `/images/` is the blob route.
+const avatarUrl = computed(() =>
+  user.value?.image ? `/images/${user.value.image}` : null
+);
 
 const nameForm = reactive({ name: "" });
 watch(
-  () => profile.value?.data.name,
+  () => user.value?.name,
   (name) => {
     nameForm.name = name || "";
   },
@@ -42,7 +27,7 @@ watch(
 
 const emailForm = reactive({ email: "", currentPassword: "" });
 watch(
-  () => profile.value?.data.email,
+  () => user.value?.email,
   (email) => {
     emailForm.email = email || "";
   },
@@ -55,35 +40,37 @@ const isUploading = ref(false);
 
 async function onNameSubmit(_: FormSubmitEvent<UpdateProfileType>) {
   isSavingName.value = true;
-  try {
-    await $csrfFetch("/api/account/profile", {
-      method: "PUT",
-      body: { name: nameForm.name },
+  const { error } = await updateUser({ name: nameForm.name });
+  isSavingName.value = false;
+  if (error) {
+    toast.add({
+      title: "Something went wrong",
+      description: error.message,
+      color: "error",
     });
-    await refreshProfile();
-    toast.add({ title: "Name updated", color: "success" });
-  } catch (error) {
-    showError(error);
-  } finally {
-    isSavingName.value = false;
+    return;
   }
+  await session.value.refetch();
+  toast.add({ title: "Name updated", color: "success" });
 }
 
 async function onEmailSubmit(_: FormSubmitEvent<UpdateEmailType>) {
   isSavingEmail.value = true;
-  try {
-    await $csrfFetch("/api/account/email", {
-      method: "PUT",
-      body: emailForm,
+  const { error } = await authClient.changeEmail({
+    newEmail: emailForm.email,
+  });
+  isSavingEmail.value = false;
+  if (error) {
+    toast.add({
+      title: "Something went wrong",
+      description: error.message,
+      color: "error",
     });
-    emailForm.currentPassword = "";
-    await refreshProfile();
-    toast.add({ title: "Email updated", color: "success" });
-  } catch (error) {
-    showError(error);
-  } finally {
-    isSavingEmail.value = false;
+    return;
   }
+  emailForm.currentPassword = "";
+  await session.value.refetch();
+  toast.add({ title: "Email updated", color: "success" });
 }
 
 async function onFileChange(event: Event) {
@@ -97,10 +84,10 @@ async function onFileChange(event: Event) {
     const body = new FormData();
     body.set("file", file);
     await $csrfFetch("/api/account/avatar", { method: "POST", body });
-    await refreshProfile();
+    await session.value.refetch();
     toast.add({ title: "Avatar updated", color: "success" });
-  } catch (error) {
-    showError(error);
+  } catch {
+    toast.add({ title: "Upload failed", color: "error" });
   } finally {
     isUploading.value = false;
     input.value = "";
@@ -111,10 +98,10 @@ async function onRemoveAvatar() {
   isUploading.value = true;
   try {
     await $csrfFetch("/api/account/avatar", { method: "DELETE" });
-    await refreshProfile();
+    await session.value.refetch();
     toast.add({ title: "Avatar removed", color: "success" });
-  } catch (error) {
-    showError(error);
+  } catch {
+    toast.add({ title: "Could not remove avatar", color: "error" });
   } finally {
     isUploading.value = false;
   }
@@ -127,9 +114,9 @@ async function onRemoveAvatar() {
       <h3 class="text-highlighted text-sm font-semibold">Avatar</h3>
       <div class="flex items-center gap-4">
         <UAvatar
-          :src="profile?.data.avatarUrl || undefined"
-          :alt="profile?.data.name"
-          :icon="profile?.data.avatarUrl ? undefined : 'i-lucide-user'"
+          :src="avatarUrl || undefined"
+          :alt="user?.name"
+          :icon="avatarUrl ? undefined : 'i-lucide-user'"
           size="lg"
         />
         <input
@@ -150,7 +137,7 @@ async function onRemoveAvatar() {
           Upload
         </UButton>
         <UButton
-          v-if="profile?.data.avatarUrl"
+          v-if="avatarUrl"
           size="sm"
           variant="ghost"
           color="error"
@@ -186,13 +173,6 @@ async function onRemoveAvatar() {
       <h3 class="text-highlighted text-sm font-semibold">Email</h3>
       <UFormField label="Email" name="email" required>
         <UInput v-model="emailForm.email" type="email" class="w-full" />
-      </UFormField>
-      <UFormField label="Current password" name="currentPassword" required>
-        <UInput
-          v-model="emailForm.currentPassword"
-          type="password"
-          class="w-full"
-        />
       </UFormField>
       <UButton type="submit" size="sm" :loading="isSavingEmail">
         Save email

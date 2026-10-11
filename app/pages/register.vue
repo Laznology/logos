@@ -1,22 +1,19 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from "@nuxt/ui";
-import { FetchError } from "ofetch";
 import type { SiteSettings } from "~~/shared/types/settings";
 
 definePageMeta({
   middleware: "guest",
 });
 
-const { $csrfFetch } = useNuxtApp();
-const { fetch: refreshSession } = useUserSession();
+const { signUp } = authClient;
+const session = authClient.useSession();
 const toast = useToast();
 const isLoading = ref(false);
 
 const { data: siteSettings } = await useFetch<SiteSettings>(
   "/api/public/settings",
-  {
-    key: "public-site-settings",
-  }
+  { key: "public-site-settings" }
 );
 
 const fields = [
@@ -50,42 +47,30 @@ const fields = [
   },
 ];
 
-const providers = [
-  {
-    label: "Continue with GitHub",
-    icon: "i-simple-icons-github",
-    color: "neutral" as const,
-    to: "/auth/github",
-  },
-];
-
 async function onSubmit(event: FormSubmitEvent<SignUpType>) {
   isLoading.value = true;
-  try {
-    await $csrfFetch("/api/auth/sign-up", {
-      method: "POST",
-      body: event.data,
-    });
-    await refreshSession();
+  const { error } = await signUp.email(event.data);
+  isLoading.value = false;
+
+  if (error) {
     toast.add({
-      title: "Account Created!",
-      description: "Your account has been registered successfully.",
-      color: "success",
+      title: "Authentication Failed",
+      description: error.message || "Could not create your account",
+      color: "error",
     });
-    await navigateTo("/");
-  } catch (error) {
-    if (error instanceof FetchError) {
-      toast.add({
-        title: "Authentication Failed",
-        description: error.statusMessage || "An unexpected error occurred.",
-        color: "error",
-      });
-    }
-  } finally {
-    isLoading.value = false;
+    return;
   }
+
+  await session.value.refetch();
+  toast.add({
+    title: "Account Created!",
+    description: "Your account has been registered successfully.",
+    color: "success",
+  });
+  await navigateTo("/");
 }
 </script>
+
 <template>
   <div class="bg-elevated/50 flex min-h-screen items-center justify-center p-4">
     <UAuthForm
@@ -94,7 +79,6 @@ async function onSubmit(event: FormSubmitEvent<SignUpType>) {
       description="Enter your details below to get started with Logos."
       icon="i-lucide-user-plus"
       :fields="fields"
-      :providers="providers"
       :schema="signUpSchema"
       :loading="isLoading"
       submit-button-label="Sign Up"

@@ -37,6 +37,8 @@ Set these values as Worker secrets or protected environment variables:
 ```dotenv
 NUXT_SESSION_PASSWORD=<random-string-at-least-32-characters>
 NUXT_OG_IMAGE_SECRET=<random-secret>
+BETTER_AUTH_SECRET=<random-string-at-least-32-characters>
+BETTER_AUTH_URL=https://example.com
 ```
 
 `NUXT_HUB_CLOUDFLARE_DATABASE_ID` and `NUXT_HUB_CLOUDFLARE_R2_BUCKET_NAME` are read while Nuxt builds. Changing either value requires a new build.
@@ -126,6 +128,12 @@ pnpm exec nuxt db generate --custom --name backfill_profile_field
 ```
 
 Do not put a consolidated SQL dump or a manually maintained `init-d1.sql` in `server/db/migrations`. NuxtHub scans every SQL file in that directory and may run the same schema twice.
+
+### D1 ignores `PRAGMA foreign_keys`
+
+D1 enforces foreign keys even inside a migration batch, so `PRAGMA foreign_keys=OFF` has no effect there (it does work against local SQLite, which is why the difference is easy to miss). A table rebuild that drops a parent table therefore cascade-deletes its children: `DROP TABLE users` silently wipes every `posts` row.
+
+Prefer `ALTER TABLE ... ADD COLUMN` over rebuilding a table that other tables reference. When a rebuild is unavoidable, drop and recreate the child tables' rows around it, or copy the child rows to a temp table first and restore them afterwards. Always test a hand-written migration against a local D1 (`wrangler d1 migrations apply DB --local`) seeded with representative data before applying it remotely.
 
 ## Existing D1 databases
 
