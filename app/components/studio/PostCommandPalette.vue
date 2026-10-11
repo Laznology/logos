@@ -95,7 +95,7 @@ const {
     if (!searchEnabled.value) {
       return Promise.resolve([]);
     }
-    return $fetch("/api/posts", {
+    return $fetch<PostSearchListType>("/api/posts", {
       query: searchParams.value,
     });
   },
