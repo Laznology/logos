@@ -126,9 +126,10 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
       }"
     >
       <template #header="{ collapsed }">
-        <div class="flex w-full items-center justify-between">
-          <div class="flex items-center gap-2">
-            <AppLogo :show-text="!collapsed" />
+        <div class="flex w-full min-w-0 items-center gap-2">
+          <AppLogo :show-text="false" class="shrink-0" />
+          <div v-if="!collapsed" class="min-w-0 flex-1">
+            <StudioWorkspaceSwitcher />
           </div>
           <UButton
             v-if="!collapsed"
@@ -136,11 +137,11 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
             variant="ghost"
             color="neutral"
             size="sm"
+            class="shrink-0"
             aria-label="Collapse sidebar"
             @click="isCollapsed = true"
           />
         </div>
-        <StudioWorkspaceSwitcher v-if="!collapsed" class="mt-2 w-full" />
       </template>
 
       <template #default="{ collapsed }">

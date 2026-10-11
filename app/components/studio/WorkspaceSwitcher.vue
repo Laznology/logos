@@ -80,8 +80,7 @@ const items = computed(() => [
       variant="ghost"
       color="neutral"
       size="sm"
-      class="max-w-full justify-start"
-      icon="i-lucide-building-2"
+      class="w-full max-w-full justify-start"
       :label="active.data?.name || 'Workspace'"
       trailing-icon="i-lucide-chevrons-up-down"
     />
