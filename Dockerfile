@@ -5,6 +5,7 @@ FROM node:24.21.0-bookworm-slim AS build
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 ENV NITRO_PRESET=node-server
+ENV VP_GIT_HOOKS=0
 
 RUN corepack enable
 WORKDIR /app

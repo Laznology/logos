@@ -2,6 +2,10 @@ name: ci
 
 on: push
 
+env:
+  # CI runners have git, but hook installation is pointless here.
+  VP_GIT_HOOKS: "0"
+
 jobs:
   ci:
     runs-on: ${{ matrix.os }}
@@ -15,20 +19,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-
-      - name: Install node
-        uses: actions/setup-node@v7
+      # Official Vite+ integration: installs vp + Node.js, resolves the
+      # vite-plus version from the project catalog, runs `vp install`, and
+      # caches package-manager data through GitHub Actions cache.
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@v1.21.2
         with:
           node-version: ${{ matrix.node }}
-          cache: pnpm
+          cache: true
 
-      - name: Install dependencies
-        run: pnpm install
+      - name: Check (format, lint, types)
+        run: vp check
 
-      - name: Lint
-        run: pnpm run lint
+      - name: Typecheck (Nuxt / vue-tsc)
+        run: vp run typecheck
 
-      - name: Typecheck
-        run: pnpm run typecheck
+      - name: Test
+        run: vp test
