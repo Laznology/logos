@@ -8,6 +8,7 @@ definePageMeta({
 
 const { signUp } = authClient;
 const session = authClient.useSession();
+const activeOrganization = authClient.useActiveOrganization();
 const toast = useToast();
 const isLoading = ref(false);
 
@@ -67,7 +68,8 @@ async function onSubmit(event: FormSubmitEvent<SignUpType>) {
     description: "Your account has been registered successfully.",
     color: "success",
   });
-  await navigateTo("/");
+  const workspaceSlug = activeOrganization.value.data?.slug;
+  await navigateTo(workspaceSlug ? `/${workspaceSlug}` : "/");
 }
 </script>
 

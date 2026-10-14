@@ -83,7 +83,7 @@ export const auth = betterAuth({
       if (ctx.path !== "/sign-up/email") {
         return;
       }
-      const settings = await siteSettingsService.get();
+      const settings = await siteSettingsService.get(null);
       if (!settings.registrationEnabled) {
         throw new APIError("FORBIDDEN", {
           message: "Registration is disabled",

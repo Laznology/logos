@@ -42,6 +42,13 @@ interface PublicPostDetailResponse {
 const open = defineModel<boolean>("open", { required: true });
 const searchQuery = ref("");
 const debouncedQuery = refDebounced(searchQuery, 300);
+const route = useRoute();
+const workspaceSlug = computed(
+  () => route.params.workspaceSlug as string | undefined
+);
+const workspacePath = computed(() =>
+  workspaceSlug.value ? `/${workspaceSlug.value}` : ""
+);
 const selectedTag = ref("all");
 const showPreview = ref(true);
 const selectedPost = ref<PublicPostItem>();
@@ -60,6 +67,9 @@ const {
     key: "public-command-palette-posts",
     query: computed(() => {
       const params: Record<string, string> = {};
+      if (workspaceSlug.value) {
+        params.workspace = workspaceSlug.value;
+      }
       if (debouncedQuery.value.trim()) {
         params.q = debouncedQuery.value.trim();
       }
@@ -104,7 +114,7 @@ const groups = computed<CommandPaletteGroup[]>(() =>
       post,
       onSelect: () => {
         open.value = false;
-        navigateTo(`/posts/${post.slug}`);
+        navigateTo(`${workspacePath.value}/${post.slug}`);
       },
     })),
   }))
@@ -130,7 +140,10 @@ async function loadPreview(post: PublicPostItem) {
     const doFetch = $fetch;
     const response = await doFetch<PublicPostDetailResponse>(
       `/api/public/posts/${post.slug}`,
-      { signal: controller.signal }
+      {
+        query: workspaceSlug.value ? { workspace: workspaceSlug.value } : {},
+        signal: controller.signal,
+      }
     );
     if (previewController === controller && response.data) {
       previewPost.value = response.data;
@@ -274,7 +287,7 @@ defineShortcuts({
                   color="neutral"
                   variant="ghost"
                   size="xs"
-                  :to="`/posts/${previewPost.slug}`"
+                  :to="`${workspacePath}/${previewPost.slug}`"
                   class="shrink-0"
                   @click="open = false"
                 />

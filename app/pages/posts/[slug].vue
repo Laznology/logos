@@ -39,7 +39,15 @@ interface GraphResponse {
 }
 
 const route = useRoute();
-const slug = computed(() => route.params.slug as string);
+const slug = computed(
+  () => (route.params.slug || route.params.postSlug) as string
+);
+const workspaceSlug = computed(
+  () => route.params.workspaceSlug as string | undefined
+);
+const workspacePath = computed(() =>
+  workspaceSlug.value ? `/${workspaceSlug.value}` : "/"
+);
 const colorMode = useColorMode();
 const toast = useToast();
 const { copy, isSupported } = useClipboard();
@@ -68,24 +76,62 @@ const {
   error,
   pending,
 } = await useFetch(() => `/api/public/posts/${slug.value}`, {
-  key: `public-post-${slug.value}`,
+  key: `public-post-${workspaceSlug.value}-${slug.value}`,
+  query: computed(() =>
+    workspaceSlug.value ? { workspace: workspaceSlug.value } : {}
+  ),
   transform: (response: ApiResponse) => response.data,
-  watch: [slug],
+  watch: [slug, workspaceSlug],
 });
 
-const { data: siteSettings } = await useFetch<SiteSettings>(
-  "/api/public/settings",
-  {
-    key: "public-site-settings",
-  }
-);
+const { data: siteSettings, error: settingsError } = await useFetch<
+  SiteSettings & { slug?: string }
+>("/api/public/settings", {
+  key: "public-site-settings",
+  query: computed(() =>
+    workspaceSlug.value ? { workspace: workspaceSlug.value } : {}
+  ),
+});
+
+if (settingsError.value) {
+  throw createError({ statusCode: 404, statusMessage: "Workspace not found" });
+}
+if (workspaceSlug.value && error.value) {
+  throw createError({ statusCode: 404, statusMessage: "Post not found" });
+}
+if (
+  workspaceSlug.value &&
+  siteSettings.value?.slug &&
+  siteSettings.value.slug !== workspaceSlug.value
+) {
+  await navigateTo(`/${siteSettings.value.slug}/${slug.value}`, {
+    redirectCode: 301,
+    replace: true,
+  });
+}
+
+const requestUrl = useRequestURL();
+useHead({
+  link: computed(() => [
+    { rel: "canonical" as const, href: `${requestUrl.origin}${route.path}` },
+    ...(siteSettings.value?.logo
+      ? [
+          { rel: "icon" as const, href: siteSettings.value.logo },
+          { rel: "apple-touch-icon" as const, href: siteSettings.value.logo },
+        ]
+      : []),
+  ]),
+});
 
 const DEFAULT_PUBLISHER = computed(
   () => siteSettings.value?.title || "Logos Publication"
 );
 
 const { data: graph } = await useFetch("/api/public/graph", {
-  key: "public-post-graph",
+  key: `public-post-graph-${workspaceSlug.value}`,
+  query: computed(() =>
+    workspaceSlug.value ? { workspace: workspaceSlug.value } : {}
+  ),
   transform: (response: GraphResponse) => response.data,
 });
 
@@ -173,7 +219,9 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => [
       label: "View as Markdown",
       icon: "i-lucide-file-text",
       trailingIcon: "i-lucide-arrow-up-right",
-      to: `/api/public/posts/${slug.value}?format=markdown`,
+      to: workspaceSlug.value
+        ? `/api/public/posts/${slug.value}?format=markdown&workspace=${encodeURIComponent(workspaceSlug.value)}`
+        : `/api/public/posts/${slug.value}?format=markdown`,
       target: "_blank",
     },
   ],
@@ -228,9 +276,12 @@ onMounted(() => {
 const DEFAULT_POST_TITLE = "Post";
 
 useSeoMeta({
-  title: () => post.value?.title || DEFAULT_POST_TITLE,
+  title: () =>
+    `${post.value?.title || DEFAULT_POST_TITLE} | ${DEFAULT_PUBLISHER.value}`,
+  ogSiteName: () => DEFAULT_PUBLISHER.value,
   description: () => seoDescription.value,
-  ogTitle: () => post.value?.title || DEFAULT_POST_TITLE,
+  ogTitle: () =>
+    `${post.value?.title || DEFAULT_POST_TITLE} | ${DEFAULT_PUBLISHER.value}`,
   ogDescription: () => seoDescription.value,
   ogType: "article",
   articlePublishedTime: () =>
@@ -292,7 +343,7 @@ useSchemaOrg(
       >
         <div class="flex min-w-0 flex-1 items-center gap-2 text-sm">
           <UButton
-            to="/"
+            :to="workspacePath"
             icon="i-lucide-house"
             variant="ghost"
             color="neutral"
@@ -392,7 +443,9 @@ useSchemaOrg(
           description="This post doesn't exist or is currently kept as a private draft."
         >
           <template #actions>
-            <UButton to="/" icon="i-lucide-house"> Go to Home </UButton>
+            <UButton :to="workspacePath" icon="i-lucide-house">
+              Go to Home
+            </UButton>
           </template>
         </UEmpty>
       </div>
@@ -486,7 +539,7 @@ useSchemaOrg(
                 <NuxtLink
                   v-for="tag in post.tags"
                   :key="tag"
-                  :to="`/?tag=${encodeURIComponent(tag)}`"
+                  :to="`${workspacePath}?tag=${encodeURIComponent(tag)}`"
                   class="border-default bg-elevated/40 text-muted hover:border-primary/40 hover:text-primary inline-flex cursor-pointer items-center gap-0.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition"
                 >
                   <span class="text-primary/70 font-semibold">#</span>{{ tag }}
@@ -559,7 +612,7 @@ useSchemaOrg(
                 v-if="graph"
                 :graph="graph"
                 :active-slug="slug"
-                @select="navigateTo(`/posts/${$event}`)"
+                @select="navigateTo(`${workspacePath}/${$event}`)"
               />
             </div>
           </aside>
@@ -575,7 +628,7 @@ useSchemaOrg(
             v-if="graph"
             :graph="graph"
             :active-slug="slug"
-            @select="navigateTo(`/posts/${$event}`)"
+            @select="navigateTo(`${workspacePath}/${$event}`)"
           />
         </template>
       </UModal>

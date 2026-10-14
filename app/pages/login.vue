@@ -8,6 +8,7 @@ definePageMeta({
 
 const { signIn } = authClient;
 const session = authClient.useSession();
+const activeOrganization = authClient.useActiveOrganization();
 const toast = useToast();
 const isLoading = ref(false);
 
@@ -57,7 +58,8 @@ async function onSubmit(event: FormSubmitEvent<SignInType>) {
     description: "You have signed in successfully.",
     color: "success",
   });
-  await navigateTo("/");
+  const workspaceSlug = activeOrganization.value.data?.slug;
+  await navigateTo(workspaceSlug ? `/${workspaceSlug}` : "/");
 }
 </script>
 

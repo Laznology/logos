@@ -12,6 +12,7 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
+const activeOrganization = authClient.useActiveOrganization();
 const { copy, isSupported } = useClipboard();
 const isUpdatingPublish = ref(false);
 const tagsInput = ref("");
@@ -57,10 +58,11 @@ const currentStatus = computed<PostStatus>(() => {
 const isPublished = computed(() => currentStatus.value === "published");
 
 const publicUrl = computed(() => {
-  if (typeof window !== "undefined") {
-    return `${window.location.origin}/posts/${props.post.slug}`;
+  const path = `/${activeOrganization.value.data?.slug}/${props.post.slug}`;
+  if (import.meta.client) {
+    return `${window.location.origin}${path}`;
   }
-  return `/posts/${props.post.slug}`;
+  return path;
 });
 
 const copyPublicUrl = async () => {

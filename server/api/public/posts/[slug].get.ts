@@ -1,4 +1,5 @@
 import { postService } from "~~/server/services/posts.service";
+import { siteSettingsService } from "~~/server/services/settings.service";
 import { extractHeadingsAndHTML } from "~~/server/utils/tiptap-renderer";
 
 export default defineEventHandler(async (event) => {
@@ -10,7 +11,15 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const post = await postService.getPublicPostBySlug(slug);
+  const workspaceSlug = getQuery(event).workspace;
+  const workspace =
+    typeof workspaceSlug === "string"
+      ? await siteSettingsService.getPublicWorkspace(workspaceSlug)
+      : null;
+  const post = await postService.getPublicPostBySlug(
+    slug,
+    workspace?.id ?? null
+  );
   const { html, headings, wordCount, readingTime, markdown } =
     extractHeadingsAndHTML(post.content);
 

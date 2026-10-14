@@ -21,7 +21,7 @@ const getAuthCondition = (user: AuthUser) =>
     : sql`0 = 1`;
 
 const getFilterCondition = ({ status, authorId }: PostFilters) => {
-  let statusCondition: SQL<unknown> | undefined;
+  let statusCondition: SQL | undefined;
   if (status) {
     statusCondition = sql`coalesce(json_extract(${postTable.metadata}, '$.status'), 'draft') = ${status}`;
   }
@@ -47,7 +47,7 @@ const withAuthorAvatarUrl = <
       ...post.author,
       avatar: toAvatarUrl(post.author.avatar),
     },
-  } as T;
+  };
 };
 
 class PostService {
@@ -78,7 +78,7 @@ class PostService {
     return posts.map(withAuthorAvatarUrl);
   }
 
-  private async _getPostBase(condition: SQL<unknown> | undefined) {
+  private async _getPostBase(condition: SQL | undefined) {
     const posts = await this.database
       .select({
         id: postTable.id,
@@ -248,7 +248,7 @@ class PostService {
       return { success: true, action, count: selectedPosts.length };
     }
 
-    const status = action as Exclude<PostBulkAction, "delete">;
+    const status = action;
     const updatedAt = new Date();
     await Promise.all(
       selectedPosts.map((post) =>
@@ -272,17 +272,27 @@ class PostService {
     return { success: true, slug };
   }
 
-  async listPublicPosts(tag?: string, search?: string) {
+  async listPublicPosts(
+    organizationId?: string | null,
+    tag?: string,
+    search?: string
+  ) {
+    if (organizationId === null) {
+      return [];
+    }
     // ponytail: SQLite json_each for json array tag lookup without junction table
     const conditions = [
+      organizationId === undefined
+        ? undefined
+        : eq(postTable.organizationId, organizationId),
       sql`json_extract(${postTable.metadata}, '$.status') = 'published'`,
     ];
-    if (tag) {
+    if (tag !== undefined && tag.length > 0) {
       conditions.push(
         sql`exists (select 1 from json_each(${postTable.metadata}, '$.tags') where json_each.value = ${tag})`
       );
     }
-    if (search) {
+    if (search !== undefined && search.length > 0) {
       const sanitized = search.replaceAll(/["*]/g, "").trim();
       if (sanitized) {
         const ftsQuery = `"${sanitized}"*`;
@@ -317,7 +327,14 @@ class PostService {
     return posts.map(withAuthorAvatarUrl);
   }
 
-  async getPublicPostBySlug(slug: string) {
+  async getPublicPostBySlug(slug: string, organizationId: string | null) {
+    if (organizationId === null) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: POST_NOT_FOUND_MSG,
+      });
+    }
+
     const [post] = await this.database
       .select({
         id: postTable.id,
@@ -334,7 +351,12 @@ class PostService {
       })
       .from(postTable)
       .leftJoin(userTable, eq(userTable.id, postTable.userId))
-      .where(eq(postTable.slug, slug))
+      .where(
+        and(
+          eq(postTable.slug, slug),
+          eq(postTable.organizationId, organizationId)
+        )
+      )
       .limit(1);
 
     if (!post) {

@@ -1,8 +1,14 @@
 import { postService } from "~~/server/services/posts.service";
+import { siteSettingsService } from "~~/server/services/settings.service";
 import { extractHeadingsAndHTML } from "~~/server/utils/tiptap-renderer";
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
+  const workspaceSlug =
+    typeof query.workspace === "string" ? query.workspace : "";
+  const workspace = workspaceSlug
+    ? await siteSettingsService.getPublicWorkspace(workspaceSlug)
+    : null;
   const tag =
     typeof query.tag === "string" && query.tag.trim()
       ? query.tag.trim()
@@ -10,7 +16,11 @@ export default defineEventHandler(async (event) => {
   const search =
     typeof query.q === "string" && query.q.trim() ? query.q.trim() : undefined;
 
-  const posts = await postService.listPublicPosts(tag, search);
+  const posts = await postService.listPublicPosts(
+    workspace?.id ?? null,
+    tag,
+    search
+  );
 
   return {
     success: true,

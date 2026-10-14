@@ -23,6 +23,12 @@ interface ApiResponse {
 }
 
 const route = useRoute();
+const workspaceSlug = computed(
+  () => route.params.workspaceSlug as string | undefined
+);
+const workspacePath = computed(() =>
+  workspaceSlug.value ? `/${workspaceSlug.value}` : "/"
+);
 const selectedTag = computed(() => (route.query.tag as string) || "");
 const commandPaletteOpen = ref(false);
 const searchQuery = ref((route.query.q as string) || "");
@@ -61,6 +67,9 @@ const { data: posts, pending } = await useFetch("/api/public/posts", {
   key: "public-blog-posts",
   query: computed(() => {
     const params: Record<string, string> = {};
+    if (workspaceSlug.value) {
+      params.workspace = workspaceSlug.value;
+    }
     if (selectedTag.value) {
       params.tag = selectedTag.value;
     }
@@ -122,12 +131,41 @@ const highlightMatch = (text: string, query: string) => {
   );
 };
 
-const { data: siteSettings } = await useFetch<SiteSettings>(
-  "/api/public/settings",
-  {
-    key: "public-site-settings",
-  }
-);
+const { data: siteSettings, error: settingsError } = await useFetch<
+  SiteSettings & { slug?: string }
+>("/api/public/settings", {
+  key: "public-site-settings",
+  query: computed(() =>
+    workspaceSlug.value ? { workspace: workspaceSlug.value } : {}
+  ),
+});
+
+if (settingsError.value) {
+  throw createError({ statusCode: 404, statusMessage: "Workspace not found" });
+}
+if (
+  workspaceSlug.value &&
+  siteSettings.value?.slug &&
+  siteSettings.value.slug !== workspaceSlug.value
+) {
+  await navigateTo(`/${siteSettings.value.slug}`, {
+    redirectCode: 301,
+    replace: true,
+  });
+}
+
+const requestUrl = useRequestURL();
+useHead({
+  link: computed(() => [
+    { rel: "canonical" as const, href: `${requestUrl.origin}${route.path}` },
+    ...(siteSettings.value?.logo
+      ? [
+          { rel: "icon" as const, href: siteSettings.value.logo },
+          { rel: "apple-touch-icon" as const, href: siteSettings.value.logo },
+        ]
+      : []),
+  ]),
+});
 
 const SITE_NAME = computed(
   () => siteSettings.value?.title || "Logos Publication"
@@ -138,6 +176,7 @@ const SITE_DESCRIPTION =
 useSeoMeta({
   title: () => `${SITE_NAME.value} — Minimal Editorial Blog`,
   description: SITE_DESCRIPTION,
+  ogSiteName: () => SITE_NAME.value,
   ogTitle: () => `${SITE_NAME.value} — Minimal Editorial Blog`,
   ogDescription: SITE_DESCRIPTION,
   ogType: "website",
@@ -165,7 +204,7 @@ defineOgImage(
       <div
         class="mx-auto flex h-14 max-w-6xl items-center justify-between px-6"
       >
-        <NuxtLink to="/" class="transition hover:opacity-80">
+        <NuxtLink :to="workspacePath" class="transition hover:opacity-80">
           <AppLogo />
         </NuxtLink>
 
@@ -299,7 +338,7 @@ defineOgImage(
               />
               <UButton
                 v-else
-                to="/"
+                :to="workspacePath"
                 icon="i-lucide-house"
                 label="Back to Home"
               />
@@ -313,7 +352,10 @@ defineOgImage(
             :key="post.id"
             class="group py-8 first:pt-0 last:pb-0"
           >
-            <NuxtLink :to="`/posts/${post.slug}`" class="block space-y-3">
+            <NuxtLink
+              :to="`${workspacePath}/${post.slug}`"
+              class="block space-y-3"
+            >
               <h2
                 :style="{ viewTransitionName: `post-title-${post.slug}` }"
                 class="text-highlighted group-hover:text-primary text-xl font-bold tracking-tight transition sm:text-2xl"
