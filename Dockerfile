@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM node:24.21.0-bookworm-slim AS build
+FROM node:24.22.0-bookworm-slim AS build
 
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
@@ -18,7 +18,7 @@ ARG NUXT_SITE_URL
 ENV NUXT_SITE_URL=$NUXT_SITE_URL
 RUN pnpm build
 
-FROM node:24.21.0-bookworm-slim AS runtime
+FROM node:24.22.0-bookworm-slim AS runtime
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
