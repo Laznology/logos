@@ -277,14 +277,11 @@ class PostService {
     tag?: string,
     search?: string
   ) {
-    if (organizationId === null) {
-      return [];
-    }
+    // ponytail: null/undefined = "semua workspace" (root /posts + sitemap sudah seperti ini)
+    const scopeId = organizationId ?? undefined;
     // ponytail: SQLite json_each for json array tag lookup without junction table
     const conditions = [
-      organizationId === undefined
-        ? undefined
-        : eq(postTable.organizationId, organizationId),
+      scopeId === undefined ? undefined : eq(postTable.organizationId, scopeId),
       sql`json_extract(${postTable.metadata}, '$.status') = 'published'`,
     ];
     if (tag !== undefined && tag.length > 0) {
@@ -327,13 +324,12 @@ class PostService {
     return posts.map(withAuthorAvatarUrl);
   }
 
-  async getPublicPostBySlug(slug: string, organizationId: string | null) {
-    if (organizationId === null) {
-      throw createError({
-        statusCode: 404,
-        statusMessage: POST_NOT_FOUND_MSG,
-      });
-    }
+  async getPublicPostBySlug(
+    slug: string,
+    organizationId: string | null | undefined
+  ) {
+    // ponytail: null/undefined = tak peduli workspace (reader global /posts/:slug); hanya id spesifik yang filter
+    const scopeId = organizationId ?? undefined;
 
     const [post] = await this.database
       .select({
@@ -354,7 +350,9 @@ class PostService {
       .where(
         and(
           eq(postTable.slug, slug),
-          eq(postTable.organizationId, organizationId)
+          scopeId === undefined
+            ? undefined
+            : eq(postTable.organizationId, scopeId)
         )
       )
       .limit(1);

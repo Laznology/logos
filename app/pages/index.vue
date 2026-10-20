@@ -352,10 +352,7 @@ defineOgImage(
             :key="post.id"
             class="group py-8 first:pt-0 last:pb-0"
           >
-            <NuxtLink
-              :to="`${workspacePath}/${post.slug}`"
-              class="block space-y-3"
-            >
+            <NuxtLink :to="`/posts/${post.slug}`" class="block space-y-3">
               <h2
                 :style="{ viewTransitionName: `post-title-${post.slug}` }"
                 class="text-highlighted group-hover:text-primary text-xl font-bold tracking-tight transition sm:text-2xl"
