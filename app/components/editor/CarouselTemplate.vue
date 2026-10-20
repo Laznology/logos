@@ -8,7 +8,19 @@ import { generateHTML } from "@tiptap/html";
 import StarterKit from "@tiptap/starter-kit";
 
 import type { CarouselFrame } from "#shared/types/carousel";
+import type { SiteSettings } from "#shared/types/settings";
 import ImageUpload from "~/components/editor/ImageUploadExtension";
+
+// ponytail: sama dengan AppLogo — satu sumber logo workspace, fallback file statis
+const { data: siteSettings } = useNuxtData<SiteSettings>(
+  "public-site-settings"
+);
+const logoSrc = computed(
+  () => siteSettings.value?.logo || "/noctarian-logo.png"
+);
+const logoAlt = computed(() =>
+  siteSettings.value?.logo ? "Workspace logo" : "Noctarian logo"
+);
 
 interface Props {
   frame: CarouselFrame;
@@ -49,7 +61,7 @@ const bodyHtml = computed(() => {
       <p class="carousel-eyebrow" aria-label="Logos">LOGOS</p>
       <h1 class="carousel-cover-title">{{ frame.title }}</h1>
       <div class="carousel-cover-footer">
-        <img src="/noctarian-logo.png" alt="Noctarian logo" />
+        <img :src="logoSrc" :alt="logoAlt" />
         <span aria-hidden="true">01</span>
       </div>
     </div>
@@ -57,7 +69,7 @@ const bodyHtml = computed(() => {
       <span class="carousel-accent" aria-hidden="true" />
       <div class="carousel-content" v-html="bodyHtml" />
       <div class="carousel-slide-footer">
-        <img src="/noctarian-logo.png" alt="Noctarian logo" />
+        <img :src="logoSrc" :alt="logoAlt" />
         <span aria-hidden="true">{{
           String(frame.index + 1).padStart(2, "0")
         }}</span>
@@ -226,9 +238,8 @@ const bodyHtml = computed(() => {
 
 .carousel-cover-footer img,
 .carousel-slide-footer img {
-  border-radius: 0.5rem;
   height: 2.8cqw;
-  object-fit: cover;
+  object-fit: contain;
   width: 2.8cqw;
 }
 </style>
