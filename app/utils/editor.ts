@@ -72,7 +72,11 @@ export const editorToolbarItems: EditorToolbarItem[][] = [
   [
     { slot: "color", tooltip: { text: "Text Color" } },
     { slot: "highlight", tooltip: { text: "Background Color" } },
-    { slot: "link", tooltip: { text: "Link" } },
+    {
+      kind: "link",
+      icon: "i-lucide-link",
+      tooltip: { text: "Link" },
+    },
   ],
 ];
 

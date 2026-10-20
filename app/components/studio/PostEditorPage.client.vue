@@ -679,9 +679,6 @@ const deletePost = async () => {
             layout="bubble"
             :items="editorToolbarItems"
           >
-            <template #link>
-              <LinkPopover :editor="editor" />
-            </template>
             <template #color>
               <UPopover :ui="{ content: 'p-3' }">
                 <UTooltip text="Text color">
