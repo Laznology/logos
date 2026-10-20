@@ -85,6 +85,22 @@ const carouselFrames = computed<CarouselFrame[]>(() => {
     ? buildCarouselFrames(post.value?.title || "", carouselContent.value)
     : [];
 });
+
+const carouselPreviewOpen = ref(false);
+const carouselPreviewIndex = ref(0);
+const carouselPreviewFrame = computed(
+  () =>
+    carouselFrames.value[carouselPreviewIndex.value] ?? carouselFrames.value[0]
+);
+const carouselStep = (dir: number) => {
+  const len = carouselFrames.value.length;
+  if (len) {
+    carouselPreviewIndex.value = (carouselPreviewIndex.value + dir + len) % len;
+  }
+};
+
+defineShortcuts({ Escape: () => (carouselPreviewOpen.value = false) });
+
 const editorValue = computed<Content>(() =>
   isCarousel.value ? carouselContent.value : (post.value.content as Content)
 );
@@ -418,36 +434,88 @@ const deletePost = async () => {
     <Teleport to="#navbar-actions">
       <div class="flex min-w-0 shrink-0 items-center gap-2">
         <div class="hidden items-center gap-2 sm:flex">
-          <UButton
-            :label="isCarousel ? 'Article' : 'Carousel'"
-            :icon="
-              isCarousel ? 'i-lucide-file-text' : 'i-lucide-panels-top-left'
-            "
-            color="neutral"
-            variant="outline"
-            size="sm"
-            @click="toggleCarouselMode"
-          />
-          <UButton
-            v-if="isCarousel"
-            label="Export Carousel"
-            icon="i-lucide-download"
-            color="primary"
-            size="sm"
-            :loading="isExporting"
-            :disabled="isExporting"
-            @click="exportCarousel"
-          />
+          <template v-if="isCarousel && carouselFrames.length">
+            <UButton
+              icon="i-lucide-gallery-vertical-end"
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              aria-label="Preview carousel"
+              @click="carouselPreviewOpen = true"
+            />
+            <UButton
+              label="Export"
+              icon="i-lucide-download"
+              color="primary"
+              size="sm"
+              :loading="isExporting"
+              :disabled="isExporting"
+              @click="exportCarousel"
+            />
+          </template>
         </div>
         <PostNavbarActions
           v-if="post"
           :post="post"
           :status-text="statusText"
           :save-post="savePost"
+          :is-carousel="isCarousel"
+          @toggle-carousel-mode="toggleCarouselMode"
           @copy-link="copyLink"
           @copy-content="copyContent"
           @delete-post="deletePost"
         />
+      </div>
+    </Teleport>
+    <Teleport to="body">
+      <div
+        v-if="carouselPreviewOpen && carouselPreviewFrame"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Carousel preview"
+        class="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-4 bg-black/85 p-4 sm:p-8"
+        @click.self="carouselPreviewOpen = false"
+      >
+        <button
+          type="button"
+          aria-label="Tutup"
+          class="absolute top-4 right-4 grid size-10 place-items-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
+          @click="carouselPreviewOpen = false"
+        >
+          <UIcon name="i-lucide-x" class="size-5" />
+        </button>
+        <div class="flex w-full items-center justify-center gap-2 sm:gap-4">
+          <button
+            type="button"
+            aria-label="Slide sebelumnya"
+            class="grid size-10 shrink-0 place-items-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
+            @click="carouselStep(-1)"
+          >
+            <UIcon name="i-lucide-chevron-left" class="size-5" />
+          </button>
+          <div class="min-w-0 flex-1 sm:w-[min(32rem,61dvh)] sm:flex-none">
+            <EditorCarouselTemplate
+              :key="
+                carouselPreviewFrame.kind === 'cover'
+                  ? 'cover'
+                  : `slide-${carouselPreviewFrame.index}`
+              "
+              :frame="carouselPreviewFrame"
+              class="rounded-lg shadow-2xl"
+            />
+          </div>
+          <button
+            type="button"
+            aria-label="Slide berikutnya"
+            class="grid size-10 shrink-0 place-items-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
+            @click="carouselStep(1)"
+          >
+            <UIcon name="i-lucide-chevron-right" class="size-5" />
+          </button>
+        </div>
+        <p class="text-sm text-white/60">
+          {{ carouselPreviewIndex + 1 }} / {{ carouselFrames.length }}
+        </p>
       </div>
     </Teleport>
     <Teleport to="body">
@@ -569,6 +637,7 @@ const deletePost = async () => {
         <UEditor
           ref="editorRef"
           v-slot="{ editor }"
+          :key="isCarousel ? 'carousel' : 'article'"
           :model-value="editorValue"
           :content-type="isCarousel ? 'json' : 'markdown'"
           :starter-kit="{ codeBlock: false }"
@@ -724,15 +793,6 @@ const deletePost = async () => {
             :items="editorSuggestionItems"
           />
         </UEditor>
-        <div v-if="isCarousel && carouselFrames.length" class="mt-10 space-y-6">
-          <div class="text-muted text-sm font-medium">Carousel preview</div>
-          <CarouselTemplate
-            v-for="frame in carouselFrames"
-            :key="frame.kind === 'cover' ? 'cover' : `slide-${frame.index}`"
-            :frame="frame"
-            editable
-          />
-        </div>
       </div>
     </div>
   </div>

@@ -5,10 +5,14 @@ const props = defineProps<{
   post: PostSelectType;
   statusText: string;
   savePost: (metadata: PostSelectType["metadata"]) => Promise<void>;
+  isCarousel?: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: "copyLink" | "copyContent" | "deletePost"): void;
+  copyLink: [];
+  copyContent: [];
+  deletePost: [];
+  toggleCarouselMode: [];
 }>();
 
 const toast = useToast();
@@ -128,6 +132,15 @@ const dropdownItems = computed(() => [
       label: "Archive",
       icon: "i-lucide-archive",
       onSelect: () => updateStatus("archive"),
+    },
+  ],
+  [
+    {
+      label: `Switch to ${props.isCarousel ? "Article" : "Carousel"}`,
+      icon: props.isCarousel
+        ? "i-lucide-file-text"
+        : "i-lucide-panels-top-left",
+      onSelect: () => emit("toggleCarouselMode"),
     },
   ],
   [
