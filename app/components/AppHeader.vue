@@ -20,7 +20,12 @@
       <USeparator orientation="vertical" class="h-7" />
 
       <div role="group" class="flex items-center gap-0.5">
-        <UColorModeButton size="sm" />
+        <ClientOnly>
+          <UColorModeButton size="sm" />
+          <template #fallback>
+            <span class="m-2 size-4 shrink-0" aria-hidden="true" />
+          </template>
+        </ClientOnly>
 
         <UButton
           icon="i-simple-icons-github"
