@@ -14,7 +14,7 @@ describe("CarouselTemplate", () => {
     expect(wrapper.text()).toContain("A useful idea");
     expect(wrapper.find('[data-carousel-frame="cover"]').exists()).toBe(true);
   });
-  it("uses the noctarian dark textured treatment", async () => {
+  it("uses the white Space Grotesk and Mono treatment", async () => {
     const wrapper = await mountSuspended(CarouselTemplate, {
       props: {
         frame: { kind: "cover", title: "A useful idea" },
@@ -25,20 +25,17 @@ describe("CarouselTemplate", () => {
     const frame = wrapper.find(".carousel-frame");
     const styles = getComputedStyle(frame.element);
 
-    // happy-dom serializes authored colors as-is (hex/hsl), not rgb().
-    expect(styles.backgroundColor).toBe("#0a0a0a");
-    expect(styles.color).toBe("#faf8f5");
-    // happy-dom omits background-image from both computed style and CSSOM, so
-    // read the authored .carousel-frame rule text and assert its noise texture.
+    // happy-dom resolves the custom property and serializes #ffffff as #fff.
+    expect(styles.backgroundColor).toBe("#fff");
+    expect(styles.color).toBe("#151515");
+
     const css = [...document.querySelectorAll("style")]
       .map((style) => style.textContent ?? "")
       .join("\n");
-    const frameRule = css.slice(css.indexOf(".carousel-frame"));
-    expect(frameRule.slice(0, frameRule.indexOf("}"))).toContain(
-      "feTurbulence"
-    );
+    expect(css).toContain("Space Grotesk");
+    expect(css).toContain("Space Mono");
   });
-  it("uses the logo and divider in both frame footers", async () => {
+  it("renders the brand footer and page numbering", async () => {
     const cover = await mountSuspended(CarouselTemplate, {
       props: {
         frame: { kind: "cover", title: "A useful idea" },
@@ -61,34 +58,10 @@ describe("CarouselTemplate", () => {
       attachTo: document.body,
     });
 
-    expect(cover.find(".carousel-cover-footer").text()).not.toContain(
-      "Carousel"
-    );
-    expect(
-      cover
-        .find('.carousel-cover-footer img[src="/noctarian-logo.png"]')
-        .exists()
-    ).toBe(true);
-    expect(
-      slide
-        .find('.carousel-slide-footer img[src="/noctarian-logo.png"]')
-        .exists()
-    ).toBe(true);
-    expect(
-      getComputedStyle(cover.find(".carousel-cover-footer").element)
-        .borderTopWidth
-    ).toBe("1px");
-    expect(
-      getComputedStyle(slide.find(".carousel-slide-footer").element)
-        .borderTopWidth
-    ).toBe("1px");
-    expect(
-      getComputedStyle(slide.find(".carousel-slide-footer").element).width
-    ).toBe("auto");
-    expect(
-      getComputedStyle(slide.find(".carousel-slide-footer").element)
-        .borderTopColor
-    ).toBe("hsla(36, 33%, 97%, .18)");
+    expect(cover.find(".carousel-logo").attributes("src")).toBe("/AppLogo.png");
+    expect(cover.find(".carousel-footer").text()).toContain("pisah.in");
+    expect(cover.find(".carousel-footer").text()).toContain("01_");
+    expect(slide.find(".carousel-footer").text()).toContain("03_");
   });
 
   it("renders rich body content and media", async () => {
@@ -107,6 +80,57 @@ describe("CarouselTemplate", () => {
               type: "image",
               attrs: { src: "/images/example.png", alt: "Example" },
             },
+            {
+              type: "table",
+              content: [
+                {
+                  type: "tableRow",
+                  content: [
+                    {
+                      type: "tableHeader",
+                      content: [
+                        {
+                          type: "paragraph",
+                          content: [{ type: "text", text: "Feature" }],
+                        },
+                      ],
+                    },
+                    {
+                      type: "tableHeader",
+                      content: [
+                        {
+                          type: "paragraph",
+                          content: [{ type: "text", text: "Status" }],
+                        },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  type: "tableRow",
+                  content: [
+                    {
+                      type: "tableCell",
+                      content: [
+                        {
+                          type: "paragraph",
+                          content: [{ type: "text", text: "Table" }],
+                        },
+                      ],
+                    },
+                    {
+                      type: "tableCell",
+                      content: [
+                        {
+                          type: "paragraph",
+                          content: [{ type: "text", text: "Ready" }],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
           ],
         },
       },
@@ -115,6 +139,10 @@ describe("CarouselTemplate", () => {
 
     expect(wrapper.text()).toContain("Heading");
     expect(wrapper.find('img[src="/images/example.png"]').exists()).toBe(true);
+    expect(wrapper.find(".carousel-content table").exists()).toBe(true);
+    expect(
+      wrapper.findAll(".carousel-content th").map((th) => th.text())
+    ).toEqual(["Feature", "Status"]);
     const heading = wrapper.find(".carousel-content h2");
     expect(heading.exists()).toBe(true);
     expect(getComputedStyle(heading.element).fontWeight).toBe("700");

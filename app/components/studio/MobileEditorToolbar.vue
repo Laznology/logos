@@ -23,7 +23,7 @@ type ToolbarEvent =
   | "insertImage"
   | "insertTable"
   | "insertCarouselSeparator"
-  | "toggleCarouselMode"
+  | "previewCarousel"
   | "exportCarousel";
 
 type MarkName = "bold" | "italic" | "underline" | "strike" | "code";
@@ -624,37 +624,36 @@ const insert = (
               />
             </div>
 
-            <USeparator />
+            <template v-if="props.isCarousel">
+              <USeparator />
 
-            <div class="grid grid-cols-2 gap-2">
-              <UButton
-                class="min-h-12 justify-start"
-                color="neutral"
-                variant="outline"
-                icon="i-lucide-panels-top-left"
-                :label="
-                  props.isCarousel ? 'Switch to article' : 'Carousel mode'
-                "
-                @click="
-                  emit('toggleCarouselMode');
-                  drawer = null;
-                "
-              />
-              <UButton
-                v-if="props.isCarousel"
-                class="min-h-12 justify-start"
-                color="primary"
-                variant="soft"
-                icon="i-lucide-download"
-                label="Export carousel"
-                :loading="props.isExporting"
-                :disabled="props.isExporting"
-                @click="
-                  emit('exportCarousel');
-                  drawer = null;
-                "
-              />
-            </div>
+              <div class="grid grid-cols-2 gap-2">
+                <UButton
+                  class="min-h-12 justify-start"
+                  color="neutral"
+                  variant="outline"
+                  icon="i-lucide-gallery-vertical-end"
+                  label="Preview carousel"
+                  @click="
+                    emit('previewCarousel');
+                    drawer = null;
+                  "
+                />
+                <UButton
+                  class="min-h-12 justify-start"
+                  color="primary"
+                  variant="soft"
+                  icon="i-lucide-download"
+                  label="Export carousel"
+                  :loading="props.isExporting"
+                  :disabled="props.isExporting"
+                  @click="
+                    emit('exportCarousel');
+                    drawer = null;
+                  "
+                />
+              </div>
+            </template>
           </div>
         </div>
       </template>

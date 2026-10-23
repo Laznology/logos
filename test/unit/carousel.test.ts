@@ -13,13 +13,13 @@ const paragraph = (text: string) => ({
 });
 
 describe("carousel pagination", () => {
-  it("uses 1080x1440 and creates a title cover", () => {
+  it("uses 1080x1350 and creates a title cover", () => {
     const frames = buildCarouselFrames("My story", {
       type: "doc",
       content: [paragraph("Body")],
     });
 
-    expect([CAROUSEL_WIDTH, CAROUSEL_HEIGHT]).toEqual([1080, 1440]);
+    expect([CAROUSEL_WIDTH, CAROUSEL_HEIGHT]).toEqual([1080, 1350]);
     expect(frames.map((frame) => frame.kind)).toEqual(["cover", "slide"]);
     expect(frames[0]).toMatchObject({ kind: "cover", title: "My story" });
   });

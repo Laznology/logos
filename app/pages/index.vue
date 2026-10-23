@@ -158,12 +158,6 @@ const requestUrl = useRequestURL();
 useHead({
   link: computed(() => [
     { rel: "canonical" as const, href: `${requestUrl.origin}${route.path}` },
-    ...(siteSettings.value?.logo
-      ? [
-          { rel: "icon" as const, href: siteSettings.value.logo },
-          { rel: "apple-touch-icon" as const, href: siteSettings.value.logo },
-        ]
-      : []),
   ]),
 });
 

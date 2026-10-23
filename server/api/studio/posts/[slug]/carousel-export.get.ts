@@ -1,5 +1,6 @@
 import type { JSONContent } from "@tiptap/core";
 import { postService } from "~~/server/services/posts.service";
+import { siteSettingsService } from "~~/server/services/settings.service";
 
 import { buildCarouselFrames } from "../../../../../shared/types/carousel";
 import {
@@ -58,10 +59,12 @@ export default defineProtectedHandler(async (event) => {
     });
   }
 
+  const settings = await siteSettingsService.get(user.organizationId);
   try {
     const images = await renderCarouselFrames(
       frames,
-      getRequestURL(event).origin
+      getRequestURL(event).origin,
+      settings.logo
     );
     const files = images.map((data, index) => ({
       name:

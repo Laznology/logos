@@ -1,14 +1,35 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 @plugin "@tailwindcss/typography";
-
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/SpaceGrotesk-SemiBold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/SpaceMono-Regular.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/SpaceMono-Bold.ttf") format("truetype");
+}
 @theme {
   --font-sans: "Public Sans", sans-serif;
 }
 
 .app-logo-mark {
-  -webkit-mask: url("/apple-touch-icon.png") center / contain no-repeat;
-  mask: url("/apple-touch-icon.png") center / contain no-repeat;
+  -webkit-mask: url("/carousel-logo.webp") center / contain no-repeat;
+  mask: url("/carousel-logo.webp") center / contain no-repeat;
+  background-color: #d83a32;
 }
 
 :root {

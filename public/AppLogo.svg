@@ -1,0 +1,35 @@
+<svg viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg" class="h-full w-auto" aria-label="Pisahin Logo">
+      <rect x="54" y="54" width="54" height="972" fill="#d64d1f" />
+      <rect x="108" y="54" width="216" height="54" fill="#d64d1f" />
+      <rect x="108" y="378" width="216" height="54" fill="#d64d1f" />
+      <rect x="270" y="108" width="54" height="270" fill="#d64d1f" />
+
+      <rect x="162" y="594" width="54" height="324" fill="#121216" />
+      <rect x="864" y="108" width="54" height="432" fill="#121216" />
+      <rect x="648" y="270" width="54" height="270" fill="#121216" />
+      <rect x="378" y="108" width="54" height="162" fill="#121216" />
+      <rect x="540" y="324" width="54" height="162" fill="#121216" />
+      <rect x="162" y="162" width="54" height="162" fill="#121216" />
+      <rect x="378" y="702" width="108" height="216" fill="#121216" />
+      <rect x="756" y="702" width="54" height="324" fill="#121216" />
+      <rect x="864" y="702" width="54" height="324" fill="#121216" />
+      <rect x="162" y="486" width="162" height="54" fill="#121216" />
+      <rect x="378" y="378" width="108" height="54" fill="#121216" />
+      <rect x="486" y="162" width="324" height="54" fill="#121216" />
+      <rect x="648" y="594" width="54" height="432" fill="#d64d1f"  />
+      <path d="M540 594H594V918H540V594Z" fill="#121216" />
+      <rect x="270" y="594" width="54" height="324" fill="#121216" />
+      <rect x="378" y="54" width="216" height="54" fill="#121216" />
+      <rect x="378" y="270" width="216" height="54" fill="#121216" />
+      <rect x="702" y="486" width="162" height="54" fill="#121216" />
+      <rect x="702" y="270" width="162" height="54" fill="#121216" />
+      <rect x="702" y="594" width="270" height="54" fill="#d64d1f" />
+      <rect x="972" y="54" width="54" height="972" fill="#d64d1f" />
+
+      <rect x="756" y="378" width="54" height="54" fill="#121216" />
+      <rect x="810" y="702" width="54" height="54" fill="#121216" />
+      <rect x="378" y="486" width="216" height="54" fill="#121216" />
+      <rect x="324" y="594" width="216" height="54" fill="#121216" />
+      <rect x="162" y="972" width="432" height="54" fill="#121216" />
+      <rect x="648" y="54" width="270" height="54" fill="#121216" />
+    </svg>

@@ -10,7 +10,9 @@ const { data: siteSettings } = useNuxtData<SiteSettings>(
   "public-site-settings"
 );
 
-const logo = computed(() => siteSettings.value?.logo || "");
+const logo = computed(
+  () => siteSettings.value?.logo || "/android-chrome-192x192.png"
+);
 const name = computed(() => siteSettings.value?.title || "Logos");
 const markSize = computed(() => {
   if (size === "sm") {

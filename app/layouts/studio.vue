@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import type { BreadcrumbItem, NavigationMenuItem } from "@nuxt/ui";
 
+import type { SiteSettings } from "#shared/types/settings";
+
+await useFetch<SiteSettings>("/api/studio/settings", {
+  key: "public-site-settings",
+  getCachedData: () => undefined,
+});
+
 const FILE_ICON = "i-lucide-file-text";
 const ADMIN_POSTS_PATH = "/studio";
 const route = useRoute();

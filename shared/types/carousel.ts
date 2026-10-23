@@ -1,7 +1,7 @@
 import type { JSONContent } from "@tiptap/core";
 
 export const CAROUSEL_WIDTH = 1080;
-export const CAROUSEL_HEIGHT = 1440;
+export const CAROUSEL_HEIGHT = 1350;
 export const CAROUSEL_EDITOR_MODE = "carousel" as const;
 
 const MAX_SLIDE_UNITS = 22;
@@ -28,43 +28,58 @@ function nodeUnits(node: JSONContent): number {
 }
 
 function splitParagraph(node: JSONContent): JSONContent[] {
-  const text = (node.content || [])
-    .map((child) => child.text || "")
-    .join("")
-    .trim();
-  if (!text) {
+  const content = node.content || [];
+  const limit = MAX_SLIDE_UNITS * CHARS_PER_UNIT;
+  const textLength = content.reduce(
+    (total, child) => total + (child.text?.length || 0),
+    0
+  );
+  if (textLength <= limit) {
     return [node];
   }
 
-  const words = text.split(/\s+/);
-  const chunks: JSONContent[] = [];
-  let current = "";
+  const chunks: JSONContent[][] = [];
+  let current: JSONContent[] = [];
+  let currentLength = 0;
 
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    if (current && candidate.length > MAX_SLIDE_UNITS * CHARS_PER_UNIT) {
-      chunks.push({
-        ...node,
-        content: [
-          { type: "text", text: current, marks: node.content?.[0]?.marks },
-        ],
-      });
-      current = word;
-    } else {
-      current = candidate;
+  const flush = () => {
+    if (current.length > 0) {
+      chunks.push(current);
+    }
+    current = [];
+    currentLength = 0;
+  };
+
+  for (const child of content) {
+    if (!child.text) {
+      current.push(child);
+      currentLength += 1;
+      continue;
+    }
+
+    for (const word of child.text.trim().split(/\s+/).filter(Boolean)) {
+      const piece = currentLength === 0 ? word : ` ${word}`;
+      if (currentLength > 0 && currentLength + piece.length > limit) {
+        flush();
+        current.push({ ...child, text: word });
+        currentLength = word.length;
+        continue;
+      }
+      const last = current.at(-1);
+      if (
+        last?.type === "text" &&
+        JSON.stringify(last.marks) === JSON.stringify(child.marks)
+      ) {
+        last.text = `${last.text}${piece}`;
+      } else {
+        current.push({ ...child, text: piece });
+      }
+      currentLength += piece.length;
     }
   }
 
-  if (current) {
-    chunks.push({
-      ...node,
-      content: [
-        { type: "text", text: current, marks: node.content?.[0]?.marks },
-      ],
-    });
-  }
-
-  return chunks;
+  flush();
+  return chunks.map((chunk) => ({ ...node, content: chunk }));
 }
 
 function paginateGroup(nodes: JSONContent[]): JSONContent[][] {
