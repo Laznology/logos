@@ -28,6 +28,7 @@ WORKDIR /app
 COPY --from=build --chown=node:node /app/.output ./.output
 COPY --from=build --chown=node:node /app/docker/entrypoint.sh ./docker/entrypoint.sh
 COPY --from=build --chown=node:node /app/docker/migrate.mjs ./.output/server/migrate.mjs
+COPY --from=build --chown=node:node /app/public/SpaceGrotesk-SemiBold.ttf /app/public/SpaceMono-Regular.ttf /app/public/SpaceMono-Bold.ttf ./public/
 RUN chmod 755 ./docker/entrypoint.sh && mkdir -p /app/.data/db /app/.data/blob && chown -R node:node /app/.data
 
 USER node
