@@ -5,6 +5,11 @@ remote_image="${GHCR_IMAGE:-ghcr.io/laznology/logos}"
 tag="${GHCR_TAG:-pisahin}"
 local_image="${LOCAL_IMAGE:-logos:$tag}"
 
+if [ "$tag" = "pisahin" ] && [ "$(git branch --show-current)" != "feat/carousel-template-red-black" ]; then
+  echo "Tag pisahin is only allowed on branch feat/carousel-template-red-black." >&2
+  exit 1
+fi
+
 if [ "${GHCR_SKIP_LOGIN:-0}" != "1" ]; then
   if [ -z "${GHCR_TOKEN:-}" ]; then
     echo "Set GHCR_TOKEN or GHCR_SKIP_LOGIN=1." >&2

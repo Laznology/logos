@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - feat/carousel-template-red-black
     tags:
       - "v*"
   workflow_dispatch:
@@ -37,6 +38,7 @@ jobs:
           images: ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=pisahin,enable=${{ github.ref == 'refs/heads/feat/carousel-template-red-black' }}
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=sha,format=short
