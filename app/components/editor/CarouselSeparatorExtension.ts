@@ -13,6 +13,25 @@ const CarouselSeparator = Node.create({
   group: "block",
   atom: true,
   selectable: true,
+  markdownTokenName: "carouselSeparator",
+  markdownTokenizer: {
+    name: "carouselSeparator",
+    level: "block",
+    start: "<!-- slide -->",
+    tokenize(src) {
+      const match = src.match(/^<!--\s*slide\s*-->\s*(?:\n|$)/);
+      if (!match) {
+        return undefined;
+      }
+      return { type: "carouselSeparator", raw: match[0] };
+    },
+  },
+  parseMarkdown(_token, { createNode }) {
+    return createNode("carouselSeparator");
+  },
+  renderMarkdown() {
+    return "<!-- slide -->";
+  },
 
   addCommands() {
     return {

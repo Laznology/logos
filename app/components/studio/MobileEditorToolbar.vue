@@ -30,7 +30,6 @@ type MarkName = "bold" | "italic" | "underline" | "strike" | "code";
 
 const props = defineProps<{
   editor: Editor;
-  isCarousel: boolean;
   isExporting: boolean;
 }>();
 
@@ -624,36 +623,34 @@ const insert = (
               />
             </div>
 
-            <template v-if="props.isCarousel">
-              <USeparator />
+            <USeparator />
 
-              <div class="grid grid-cols-2 gap-2">
-                <UButton
-                  class="min-h-12 justify-start"
-                  color="neutral"
-                  variant="outline"
-                  icon="i-lucide-gallery-vertical-end"
-                  label="Preview carousel"
-                  @click="
-                    emit('previewCarousel');
-                    drawer = null;
-                  "
-                />
-                <UButton
-                  class="min-h-12 justify-start"
-                  color="primary"
-                  variant="soft"
-                  icon="i-lucide-download"
-                  label="Export carousel"
-                  :loading="props.isExporting"
-                  :disabled="props.isExporting"
-                  @click="
-                    emit('exportCarousel');
-                    drawer = null;
-                  "
-                />
-              </div>
-            </template>
+            <div class="grid grid-cols-2 gap-2">
+              <UButton
+                class="min-h-12 justify-start"
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-gallery-vertical-end"
+                label="Preview carousel"
+                @click="
+                  emit('previewCarousel');
+                  drawer = null;
+                "
+              />
+              <UButton
+                class="min-h-12 justify-start"
+                color="primary"
+                variant="soft"
+                icon="i-lucide-download"
+                label="Export carousel"
+                :loading="props.isExporting"
+                :disabled="props.isExporting"
+                @click="
+                  emit('exportCarousel');
+                  drawer = null;
+                "
+              />
+            </div>
           </div>
         </div>
       </template>

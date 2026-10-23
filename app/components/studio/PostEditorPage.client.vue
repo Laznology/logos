@@ -64,6 +64,7 @@ const newTagInput = ref("");
 const tagInputRef = ref<HTMLInputElement | null>(null);
 const carouselRevision = ref(0);
 const isExporting = ref(false);
+const carouselDocument = ref<JSONContent>({ type: "doc", content: [] });
 
 const isCarousel = computed(() => {
   const metadata = (post.value?.metadata as Record<string, unknown>) || {};
@@ -71,6 +72,9 @@ const isCarousel = computed(() => {
 });
 
 const carouselContent = computed<JSONContent>(() => {
+  if (!isCarousel.value) {
+    return carouselDocument.value;
+  }
   const metadata = (post.value?.metadata as Record<string, unknown>) || {};
   const stored = metadata.carouselDocument;
   if (
@@ -80,14 +84,12 @@ const carouselContent = computed<JSONContent>(() => {
   ) {
     return stored as JSONContent;
   }
-  return { type: "doc", content: [] };
+  return carouselDocument.value;
 });
 
 const carouselFrames = computed<CarouselFrame[]>(() => {
   void carouselRevision.value;
-  return isCarousel.value
-    ? buildCarouselFrames(post.value?.title || "", carouselContent.value)
-    : [];
+  return buildCarouselFrames(post.value?.title || "", carouselContent.value);
 });
 
 const carouselPreviewOpen = ref(false);
@@ -278,22 +280,27 @@ const updateCarouselDocument = () => {
   if (!document || !post.value) {
     return;
   }
-  const metadata = (post.value.metadata as Record<string, unknown>) || {};
-  post.value.metadata = { ...metadata, carouselDocument: document };
+  carouselDocument.value = document;
+  if (isCarousel.value) {
+    const metadata = (post.value.metadata as Record<string, unknown>) || {};
+    post.value.metadata = { ...metadata, carouselDocument: document };
+  }
   carouselRevision.value += 1;
 };
 
+const openCarouselPreview = () => {
+  updateCarouselDocument();
+  carouselPreviewIndex.value = 0;
+  carouselPreviewOpen.value = true;
+};
+
 const exportCarousel = async () => {
-  if (!post.value?.slug || !isCarousel.value || isExporting.value) {
+  if (!post.value?.slug || isExporting.value) {
     return;
   }
   isExporting.value = true;
   try {
     updateCarouselDocument();
-    post.value.content = carouselContent.value || {
-      type: "doc",
-      content: [],
-    };
     await performAutoSave.flush();
     if (!post.value.id || post.value.slug === "untitled") {
       await performAutoSave.flush();
@@ -423,7 +430,7 @@ const deletePost = async () => {
     <Teleport to="#navbar-actions">
       <div class="flex min-w-0 shrink-0 items-center gap-2">
         <div
-          v-if="isCarousel && carouselFrames.length"
+          v-if="post && carouselFrames.length"
           class="flex items-center gap-2"
         >
           <UButton
@@ -432,7 +439,7 @@ const deletePost = async () => {
             variant="ghost"
             size="sm"
             aria-label="Preview carousel"
-            @click="carouselPreviewOpen = true"
+            @click="openCarouselPreview"
           />
           <UButton
             label="Export"
@@ -755,14 +762,13 @@ const deletePost = async () => {
           </UEditorToolbar>
           <StudioMobileEditorToolbar
             :editor="editor"
-            :is-carousel="isCarousel"
             :is-exporting="isExporting"
             @insert-image="customEditorHandlers.image.execute(editor).run()"
             @insert-table="customEditorHandlers.table.execute(editor).run()"
             @insert-carousel-separator="
               customEditorHandlers.carouselSeparator.execute(editor).run()
             "
-            @preview-carousel="carouselPreviewOpen = true"
+            @preview-carousel="openCarouselPreview"
             @export-carousel="exportCarousel"
             @drawer-change="mobileEditorDrawerOpen = $event"
           />
