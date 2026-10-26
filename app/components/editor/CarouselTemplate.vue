@@ -177,6 +177,7 @@ const bodyHtml = computed(() => {
   /* ponytail: accent stays pinned at the top-left; content centers in the space
      below it. Two auto margins would fight and push everything into the bottom third. */
   justify-content: flex-start;
+  padding-top: 9cqw;
 }
 
 .carousel-body > .carousel-accent {
