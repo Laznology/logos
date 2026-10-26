@@ -96,7 +96,7 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
-          await auth.api.createOrganization({
+          const organization = await auth.api.createOrganization({
             body: {
               name: `${user.name}'s Workspace`,
               slug: workspaceSlug(
@@ -106,6 +106,10 @@ export const auth = betterAuth({
               userId: user.id,
             },
           });
+          await db
+            .update(sessionTable)
+            .set({ activeOrganizationId: organization.id })
+            .where(eq(sessionTable.userId, user.id));
         },
       },
     },
@@ -134,10 +138,27 @@ export async function requireAuth(event: H3Event): Promise<AuthUser> {
   if (!session?.user) {
     throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
   }
+
+  let organizationId = session.session.activeOrganizationId ?? null;
+  if (!organizationId) {
+    const [membership] = await db
+      .select({ organizationId: memberTable.organizationId })
+      .from(memberTable)
+      .where(eq(memberTable.userId, session.user.id))
+      .limit(1);
+    organizationId = membership?.organizationId ?? null;
+    if (organizationId) {
+      await db
+        .update(sessionTable)
+        .set({ activeOrganizationId: organizationId })
+        .where(eq(sessionTable.id, session.session.id));
+    }
+  }
+
   return {
     id: session.user.id,
     role: session.user.role as Role,
-    organizationId: session.session.activeOrganizationId ?? null,
+    organizationId,
   };
 }
 

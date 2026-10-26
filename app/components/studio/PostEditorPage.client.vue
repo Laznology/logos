@@ -11,7 +11,11 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import type { EditorView } from "@tiptap/pm/view";
 
 import type { CarouselFrame } from "#shared/types/carousel";
-import { buildCarouselFrames } from "#shared/types/carousel";
+import {
+  CAROUSEL_HEIGHT,
+  CAROUSEL_WIDTH,
+  buildCarouselFrames,
+} from "#shared/types/carousel";
 import type { PostGraph } from "#shared/types/graph";
 import CarouselSeparator from "~/components/editor/CarouselSeparatorExtension";
 import ImageUpload from "~/components/editor/ImageUploadExtension";
@@ -60,6 +64,7 @@ const newTagInput = ref("");
 const tagInputRef = ref<HTMLInputElement | null>(null);
 const carouselRevision = ref(0);
 const isExporting = ref(false);
+const carouselDocument = ref<JSONContent>({ type: "doc", content: [] });
 
 const isCarousel = computed(() => {
   const metadata = (post.value?.metadata as Record<string, unknown>) || {};
@@ -67,6 +72,9 @@ const isCarousel = computed(() => {
 });
 
 const carouselContent = computed<JSONContent>(() => {
+  if (!isCarousel.value) {
+    return carouselDocument.value;
+  }
   const metadata = (post.value?.metadata as Record<string, unknown>) || {};
   const stored = metadata.carouselDocument;
   if (
@@ -76,14 +84,12 @@ const carouselContent = computed<JSONContent>(() => {
   ) {
     return stored as JSONContent;
   }
-  return { type: "doc", content: [] };
+  return carouselDocument.value;
 });
 
 const carouselFrames = computed<CarouselFrame[]>(() => {
   void carouselRevision.value;
-  return isCarousel.value
-    ? buildCarouselFrames(post.value?.title || "", carouselContent.value)
-    : [];
+  return buildCarouselFrames(post.value?.title || "", carouselContent.value);
 });
 
 const carouselPreviewOpen = ref(false);
@@ -274,37 +280,27 @@ const updateCarouselDocument = () => {
   if (!document || !post.value) {
     return;
   }
-  const metadata = (post.value.metadata as Record<string, unknown>) || {};
-  post.value.metadata = { ...metadata, carouselDocument: document };
+  carouselDocument.value = document;
+  if (isCarousel.value) {
+    const metadata = (post.value.metadata as Record<string, unknown>) || {};
+    post.value.metadata = { ...metadata, carouselDocument: document };
+  }
   carouselRevision.value += 1;
 };
 
-const toggleCarouselMode = () => {
-  if (!post.value) {
-    return;
-  }
-  if (!isCarousel.value) {
-    updateCarouselDocument();
-  }
-  const metadata = (post.value.metadata as Record<string, unknown>) || {};
-  post.value.metadata = {
-    ...metadata,
-    editorMode: isCarousel.value ? "article" : "carousel",
-  };
-  performAutoSave();
+const openCarouselPreview = () => {
+  updateCarouselDocument();
+  carouselPreviewIndex.value = 0;
+  carouselPreviewOpen.value = true;
 };
 
 const exportCarousel = async () => {
-  if (!post.value?.slug || !isCarousel.value || isExporting.value) {
+  if (!post.value?.slug || isExporting.value) {
     return;
   }
   isExporting.value = true;
   try {
     updateCarouselDocument();
-    post.value.content = carouselContent.value || {
-      type: "doc",
-      content: [],
-    };
     await performAutoSave.flush();
     if (!post.value.id || post.value.slug === "untitled") {
       await performAutoSave.flush();
@@ -433,36 +429,38 @@ const deletePost = async () => {
   <div class="bg-default relative flex h-full flex-col">
     <Teleport to="#navbar-actions">
       <div class="flex min-w-0 shrink-0 items-center gap-2">
-        <div class="hidden items-center gap-2 sm:flex">
-          <template v-if="isCarousel && carouselFrames.length">
-            <UButton
-              icon="i-lucide-gallery-vertical-end"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              aria-label="Preview carousel"
-              @click="carouselPreviewOpen = true"
-            />
-            <UButton
-              label="Export"
-              icon="i-lucide-download"
-              color="primary"
-              size="sm"
-              :loading="isExporting"
-              :disabled="isExporting"
-              @click="exportCarousel"
-            />
-          </template>
+        <div
+          v-if="post && carouselFrames.length"
+          class="flex items-center gap-2"
+        >
+          <UButton
+            icon="i-lucide-gallery-vertical-end"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            aria-label="Preview carousel"
+            @click="openCarouselPreview"
+          />
+          <UButton
+            label="Export"
+            icon="i-lucide-download"
+            color="primary"
+            size="sm"
+            aria-label="Export carousel"
+            :ui="{ label: 'hidden sm:inline' }"
+            :loading="isExporting"
+            :disabled="isExporting"
+            @click="exportCarousel"
+          />
         </div>
         <PostNavbarActions
           v-if="post"
           :post="post"
           :status-text="statusText"
           :save-post="savePost"
-          :is-carousel="isCarousel"
-          @toggle-carousel-mode="toggleCarouselMode"
           @copy-link="copyLink"
           @copy-content="copyContent"
+          @open-graph="graphOpen = true"
           @delete-post="deletePost"
         />
       </div>
@@ -473,63 +471,53 @@ const deletePost = async () => {
         role="dialog"
         aria-modal="true"
         aria-label="Carousel preview"
-        class="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-4 bg-black/85 p-4 sm:p-8"
+        class="fixed inset-0 z-[200] flex items-center justify-center bg-black"
         @click.self="carouselPreviewOpen = false"
       >
+        <div
+          class="relative w-[min(100%,calc(100dvh*0.8))]"
+          :style="{ aspectRatio: `${CAROUSEL_WIDTH} / ${CAROUSEL_HEIGHT}` }"
+        >
+          <EditorCarouselTemplate
+            :key="
+              carouselPreviewFrame.kind === 'cover'
+                ? 'cover'
+                : `slide-${carouselPreviewFrame.index}`
+            "
+            :frame="carouselPreviewFrame"
+          />
+        </div>
+        <button
+          type="button"
+          aria-label="Slide sebelumnya"
+          class="absolute top-1/2 left-3 z-10 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-black/40 text-white/80 backdrop-blur-sm transition hover:bg-black/60 hover:text-white"
+          @click="carouselStep(-1)"
+        >
+          <UIcon name="i-lucide-chevron-left" class="size-5" />
+        </button>
+        <button
+          type="button"
+          aria-label="Slide berikutnya"
+          class="absolute top-1/2 right-3 z-10 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-black/40 text-white/80 backdrop-blur-sm transition hover:bg-black/60 hover:text-white"
+          @click="carouselStep(1)"
+        >
+          <UIcon name="i-lucide-chevron-right" class="size-5" />
+        </button>
         <button
           type="button"
           aria-label="Tutup"
-          class="absolute top-4 right-4 grid size-10 place-items-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
+          class="absolute top-3 right-3 z-10 grid size-10 place-items-center rounded-full bg-black/40 text-white/80 backdrop-blur-sm transition hover:bg-black/60 hover:text-white"
           @click="carouselPreviewOpen = false"
         >
           <UIcon name="i-lucide-x" class="size-5" />
         </button>
-        <div class="flex w-full items-center justify-center gap-2 sm:gap-4">
-          <button
-            type="button"
-            aria-label="Slide sebelumnya"
-            class="grid size-10 shrink-0 place-items-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
-            @click="carouselStep(-1)"
-          >
-            <UIcon name="i-lucide-chevron-left" class="size-5" />
-          </button>
-          <div class="min-w-0 flex-1 sm:w-[min(32rem,61dvh)] sm:flex-none">
-            <EditorCarouselTemplate
-              :key="
-                carouselPreviewFrame.kind === 'cover'
-                  ? 'cover'
-                  : `slide-${carouselPreviewFrame.index}`
-              "
-              :frame="carouselPreviewFrame"
-              class="rounded-lg shadow-2xl"
-            />
-          </div>
-          <button
-            type="button"
-            aria-label="Slide berikutnya"
-            class="grid size-10 shrink-0 place-items-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
-            @click="carouselStep(1)"
-          >
-            <UIcon name="i-lucide-chevron-right" class="size-5" />
-          </button>
-        </div>
-        <p class="text-sm text-white/60">
+        <p
+          class="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-xs text-white/80 backdrop-blur-sm"
+        >
           {{ carouselPreviewIndex + 1 }} / {{ carouselFrames.length }}
         </p>
       </div>
     </Teleport>
-    <Teleport to="body">
-      <UButton
-        v-if="!mobileEditorDrawerOpen && !graphOpen"
-        class="!fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 shadow-md sm:right-6 sm:bottom-6 sm:z-[100]"
-        size="sm"
-        icon="i-lucide-share-2"
-        label="Graph"
-        color="primary"
-        @click="graphOpen = true"
-      />
-    </Teleport>
-
     <UModal
       v-model:open="graphOpen"
       title="Post graph"
@@ -774,14 +762,13 @@ const deletePost = async () => {
           </UEditorToolbar>
           <StudioMobileEditorToolbar
             :editor="editor"
-            :is-carousel="isCarousel"
             :is-exporting="isExporting"
             @insert-image="customEditorHandlers.image.execute(editor).run()"
             @insert-table="customEditorHandlers.table.execute(editor).run()"
             @insert-carousel-separator="
               customEditorHandlers.carouselSeparator.execute(editor).run()
             "
-            @toggle-carousel-mode="toggleCarouselMode"
+            @preview-carousel="openCarouselPreview"
             @export-carousel="exportCarousel"
             @drawer-change="mobileEditorDrawerOpen = $event"
           />

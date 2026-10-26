@@ -22,6 +22,16 @@ const CAROUSEL_LOGO_SOURCE =
 const CAROUSEL_NOISE_BACKGROUND =
   'url("data:image/svg+xml,%3Csvg viewBox=%270 0 400 400%27 xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cfilter id=%27noiseFilter%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.75%27 numOctaves=%273%27 stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url(%23noiseFilter)%27 opacity=%270.08%27/%3E%3C/svg%3E")';
 
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const chunkSize = 32_000;
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCodePoint(...bytes.subarray(index, index + chunkSize));
+  }
+  return btoa(binary);
+}
+
 function resolveImageSource(src: string, origin: string): string {
   if (!src || src.startsWith("http://") || src.startsWith("https://")) {
     return src;
@@ -31,6 +41,39 @@ function resolveImageSource(src: string, origin: string): string {
   }
   return `${origin}/${src}`;
 }
+
+const RENDERABLE_IMAGE_TYPES: Record<string, true> = {
+  "image/jpeg": true,
+  "image/png": true,
+  "image/webp": true,
+};
+
+async function resolveLogoSource(
+  logo: string | null | undefined,
+  origin: string
+): Promise<string> {
+  if (!logo) {
+    return CAROUSEL_LOGO_SOURCE;
+  }
+  if (logo.startsWith("data:")) {
+    return logo;
+  }
+  try {
+    const response = await fetch(resolveImageSource(logo, origin));
+    const contentType = response.headers.get("content-type")?.split(";")[0];
+    if (!response.ok || !contentType || !RENDERABLE_IMAGE_TYPES[contentType]) {
+      return CAROUSEL_LOGO_SOURCE;
+    }
+    const buffer = await response.arrayBuffer();
+    if (buffer.byteLength > 2 * 1024 * 1024) {
+      return CAROUSEL_LOGO_SOURCE;
+    }
+    return `data:${contentType};base64,${arrayBufferToBase64(buffer)}`;
+  } catch {
+    return CAROUSEL_LOGO_SOURCE;
+  }
+}
+
 function textNode(text: string, style: Style): RenderNode {
   return { type: "text", text, style };
 }
@@ -127,34 +170,263 @@ function textFromNode(node: JSONContent): string {
   return (node.content || []).map(textFromNode).join(" ");
 }
 
+function rawText(node: JSONContent): string {
+  if (node.text) {
+    return node.text;
+  }
+  return (node.content || []).map(rawText).join("");
+}
+
 function inlineNodes(content: JSONContent[] = []): RenderNode[] {
-  return content.map((node) => {
+  const runs: { image?: RenderNode; style?: Style; text?: string }[] = [];
+
+  for (const node of content) {
+    if (node.type === "hardBreak") {
+      continue;
+    }
+
     if (node.type === "image" || node.type === "imageUpload") {
-      return {
-        type: "image",
-        src: String(node.attrs?.src || ""),
-        style: { maxWidth: "100%", maxHeight: 500, objectFit: "contain" },
-      };
-    }
+      runs.push({
+        image: {
+          type: "image",
+          src: String(node.attrs?.src || ""),
+          style: { maxWidth: "100%", maxHeight: 500, objectFit: "contain" },
+        },
+      });
+    } else {
+      const style: Style = {};
+      const decorations: string[] = [];
+      for (const mark of node.marks || []) {
+        if (mark.type === "bold") {
+          style.fontWeight = 700;
+        }
+        if (mark.type === "italic") {
+          style.fontStyle = "italic";
+        }
+        if (mark.type === "underline") {
+          decorations.push("underline");
+        }
+        if (mark.type === "strike") {
+          decorations.push("line-through");
+        }
+        if (mark.type === "code") {
+          style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+          style.fontFamily = "monospace";
+        }
+        if (mark.type === "highlight") {
+          style.backgroundColor = String(mark.attrs?.color || "#fef08a");
+        }
+        if (mark.type === "link") {
+          style.color = CAROUSEL_ACCENT;
+          decorations.push("underline");
+        }
+        if (mark.type === "textStyle" && mark.attrs?.color) {
+          style.color = String(mark.attrs.color);
+        }
+      }
+      if (decorations.length > 0) {
+        style.textDecoration = decorations.join(" ");
+      }
 
-    const style: Style = {};
-    for (const mark of node.marks || []) {
-      if (mark.type === "bold") {
-        style.fontWeight = 700;
-      }
-      if (mark.type === "italic") {
-        style.fontStyle = "italic";
-      }
-      if (mark.type === "strike") {
-        style.textDecoration = "line-through";
-      }
-      if (mark.type === "textStyle" && mark.attrs?.color) {
-        style.color = String(mark.attrs.color);
+      for (const token of textFromNode(node).match(/\s+|\S+/g) || []) {
+        if (/^\s+$/.test(token)) {
+          const previous = runs.at(-1);
+          if (previous?.text) {
+            previous.text += " ";
+          }
+          continue;
+        }
+        runs.push({ style, text: token });
       }
     }
+  }
 
-    return { type: "text", text: textFromNode(node), style };
+  return runs.map((run) => {
+    if (run.image) {
+      return run.image;
+    }
+    return textNode(run.text || "", run.style || {});
   });
+}
+
+function splitOnHardBreaks(content: JSONContent[] = []): JSONContent[][] {
+  const lines: JSONContent[][] = [[]];
+  for (const node of content) {
+    if (node.type === "hardBreak") {
+      lines.push([]);
+      continue;
+    }
+    lines.at(-1)?.push(node);
+  }
+  return lines;
+}
+
+function textBlockNode(node: JSONContent, overrides: Style = {}): RenderNode {
+  const level = Number(node.attrs?.level || 0);
+  const isHeading = node.type === "heading";
+  const marginBottom = overrides.marginBottom ?? (isHeading ? 24 : 20);
+  const baseStyle: Style = {
+    display: "flex",
+    flexWrap: "wrap",
+    fontSize: isHeading ? Math.max(38, 72 - level * 8) : 36,
+    fontWeight: isHeading ? 700 : 400,
+    lineHeight: isHeading ? 1.05 : 1.25,
+    ...overrides,
+    marginBottom,
+  };
+  const lines = splitOnHardBreaks(node.content);
+  if (lines.length <= 1) {
+    return {
+      type: "container",
+      style: baseStyle,
+      children: inlineNodes(node.content),
+    };
+  }
+  return {
+    type: "container",
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      marginBottom,
+    },
+    children: lines.map((line) => ({
+      type: "container",
+      style: { ...baseStyle, marginBottom: 0, width: "100%" },
+      children: inlineNodes(line),
+    })),
+  };
+}
+
+function listNode(node: JSONContent, depth = 0): RenderNode {
+  const ordered = node.type === "orderedList";
+  const start = Number(node.attrs?.start || 1);
+  const items = (node.content || []).map((item, index) => {
+    const line: RenderNode[] = [];
+    const nested: JSONContent[] = [];
+    for (const child of item.content || []) {
+      if (child.type === "bulletList" || child.type === "orderedList") {
+        nested.push(child);
+      } else if (child.type === "paragraph") {
+        line.push(...inlineNodes(child.content));
+      } else {
+        line.push(...inlineNodes([child]));
+      }
+    }
+    return {
+      type: "container" as const,
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        marginBottom: depth === 0 ? 10 : 6,
+      },
+      children: [
+        {
+          type: "container" as const,
+          style: {
+            display: "flex",
+            flexWrap: "wrap",
+            fontSize: 36,
+            lineHeight: 1.25,
+          },
+          children: [
+            textNode(ordered ? `${start + index}. ` : "\u2022 ", {
+              fontSize: 36,
+            }),
+            ...line,
+          ],
+        },
+        ...nested.map((child) => listNode(child, depth + 1)),
+      ],
+    };
+  });
+
+  return {
+    type: "container",
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      marginBottom: depth === 0 ? 20 : 4,
+      marginLeft: depth === 0 ? 0 : 28,
+    },
+    children: items,
+  };
+}
+
+function codeBlockNode(node: JSONContent): RenderNode {
+  return {
+    type: "container",
+    style: {
+      backgroundColor: "#161616",
+      borderColor: CAROUSEL_BORDER,
+      borderRadius: 10,
+      borderStyle: "solid",
+      borderWidth: 1,
+      marginBottom: 20,
+      padding: "16px 18px",
+    },
+    children: [
+      {
+        type: "text",
+        text: (node.content || []).map(rawText).join(""),
+        style: {
+          color: CAROUSEL_TEXT,
+          fontFamily: "monospace",
+          fontSize: 28,
+          lineHeight: 1.45,
+          overflowWrap: "anywhere",
+          whiteSpace: "pre-wrap",
+        },
+      },
+    ],
+  };
+}
+
+function tableNode(node: JSONContent): RenderNode {
+  const rows = node.content || [];
+  return {
+    type: "container",
+    style: {
+      borderColor: CAROUSEL_BORDER,
+      borderLeftStyle: "solid",
+      borderLeftWidth: 1,
+      borderTopStyle: "solid",
+      borderTopWidth: 1,
+      display: "flex",
+      flexDirection: "column",
+      marginBottom: 20,
+      width: "100%",
+    },
+    children: rows.map((row) => ({
+      type: "container",
+      style: { display: "flex", flexDirection: "row", width: "100%" },
+      children: (row.content || []).map((cell) => {
+        const header = cell.type === "tableHeader";
+        const blocks = cell.content || [];
+        return {
+          type: "container",
+          style: {
+            ...(header ? { backgroundColor: "#1f1f1f" } : {}),
+            borderBottomStyle: "solid",
+            borderBottomWidth: 1,
+            borderColor: CAROUSEL_BORDER,
+            borderRightStyle: "solid",
+            borderRightWidth: 1,
+            display: "block",
+            flex: 1,
+            padding: "10px 12px",
+          },
+          children: blocks.map((child, index) =>
+            textBlockNode(child, {
+              fontSize: 30,
+              fontWeight: header ? 700 : 400,
+              lineHeight: 1.45,
+              marginBottom: index === blocks.length - 1 ? 0 : 6,
+            })
+          ),
+        };
+      }),
+    })),
+  };
 }
 
 function blockNode(node: JSONContent): RenderNode {
@@ -173,33 +445,87 @@ function blockNode(node: JSONContent): RenderNode {
   }
 
   if (node.type === "bulletList" || node.type === "orderedList") {
-    const items = (node.content || []).map((item, index) => ({
-      type: "container" as const,
-      style: { display: "flex", marginBottom: 12 },
-      children: inlineNodes([
-        {
-          type: "text",
-          text: node.type === "bulletList" ? "• " : `${index + 1}. `,
-        },
-        ...(item.content || []),
-      ]),
-    }));
-    return { type: "container", children: items, style: { marginBottom: 24 } };
+    return listNode(node);
   }
 
-  const level = Number(node.attrs?.level || 0);
-  const isHeading = node.type === "heading";
-  return {
-    type: "container",
-    style: {
-      display: "flex",
-      marginBottom: isHeading ? 24 : 20,
-      fontSize: isHeading ? Math.max(38, 72 - level * 8) : 36,
-      fontWeight: isHeading ? 700 : 400,
-      lineHeight: isHeading ? 1.05 : 1.25,
-    },
-    children: inlineNodes(node.content),
-  };
+  if (node.type === "blockquote") {
+    return {
+      type: "container",
+      style: {
+        borderLeftColor: CAROUSEL_ACCENT,
+        borderLeftStyle: "solid",
+        borderLeftWidth: 4,
+        color: CAROUSEL_TEXT_DIM,
+        fontStyle: "italic",
+        marginBottom: 20,
+        paddingLeft: 20,
+      },
+      children: (node.content || []).map((child) =>
+        child.type === "paragraph"
+          ? textBlockNode(child, { marginBottom: 6 })
+          : blockNode(child)
+      ),
+    };
+  }
+
+  if (node.type === "codeBlock") {
+    return codeBlockNode(node);
+  }
+
+  if (node.type === "horizontalRule") {
+    return {
+      type: "container",
+      style: {
+        backgroundColor: CAROUSEL_BORDER,
+        height: 1,
+        marginBottom: 24,
+        marginTop: 4,
+        width: "100%",
+      },
+    };
+  }
+
+  if (node.type === "table") {
+    return tableNode(node);
+  }
+
+  return textBlockNode(node);
+}
+
+async function toDataUri(src: string, origin: string): Promise<string> {
+  if (!src || src.startsWith("data:")) {
+    return src;
+  }
+  const url = src.startsWith("/") ? `${origin}${src}` : src;
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    return src;
+  }
+  try {
+    const response = await fetch(url);
+    const contentType = response.headers.get("content-type")?.split(";")[0];
+    if (!response.ok || !contentType?.startsWith("image/")) {
+      return src;
+    }
+    const buffer = await response.arrayBuffer();
+    if (buffer.byteLength > 4 * 1024 * 1024) {
+      return src;
+    }
+    return `data:${contentType};base64,${arrayBufferToBase64(buffer)}`;
+  } catch {
+    return src;
+  }
+}
+
+async function embedImages(node: RenderNode, origin: string): Promise<void> {
+  if (node.type === "image") {
+    node.src = await toDataUri(node.src, origin);
+    return;
+  }
+  if (node.type === "container") {
+    await Promise.all(
+      (node.children || []).map((child) => embedImages(child, origin))
+    );
+  }
 }
 
 function frameNode(
@@ -283,16 +609,19 @@ function frameNode(
 
 export async function renderCarouselFrames(
   frames: CarouselFrame[],
-  origin: string
+  origin: string,
+  logo?: string | null
 ): Promise<Uint8Array[]> {
-  const logoSrc = frames.length > 0 ? CAROUSEL_LOGO_SOURCE : null;
+  const logoSrc = await resolveLogoSource(logo, origin);
   const images: Uint8Array[] = [];
+  const nodes = frames.map((frame) => frameNode(frame, origin, logoSrc));
+  await Promise.all(nodes.map((node) => embedImages(node, origin)));
   // Takumi can return another frame's buffer when a renderer is reused.
-  for (const frame of frames) {
+  for (const node of nodes) {
     // oxlint-disable-next-line no-await-in-loop -- isolated renderers preserve frame order.
     const renderer = await createCarouselRenderer();
     // oxlint-disable-next-line no-await-in-loop -- isolated renderers preserve frame order.
-    const rendered = await renderer.render(frameNode(frame, origin, logoSrc), {
+    const rendered = await renderer.render(node, {
       width: CAROUSEL_WIDTH,
       height: CAROUSEL_HEIGHT,
       format: "png",

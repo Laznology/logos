@@ -23,14 +23,13 @@ type ToolbarEvent =
   | "insertImage"
   | "insertTable"
   | "insertCarouselSeparator"
-  | "toggleCarouselMode"
+  | "previewCarousel"
   | "exportCarousel";
 
 type MarkName = "bold" | "italic" | "underline" | "strike" | "code";
 
 const props = defineProps<{
   editor: Editor;
-  isCarousel: boolean;
   isExporting: boolean;
 }>();
 
@@ -631,17 +630,14 @@ const insert = (
                 class="min-h-12 justify-start"
                 color="neutral"
                 variant="outline"
-                icon="i-lucide-panels-top-left"
-                :label="
-                  props.isCarousel ? 'Switch to article' : 'Carousel mode'
-                "
+                icon="i-lucide-gallery-vertical-end"
+                label="Preview carousel"
                 @click="
-                  emit('toggleCarouselMode');
+                  emit('previewCarousel');
                   drawer = null;
                 "
               />
               <UButton
-                v-if="props.isCarousel"
                 class="min-h-12 justify-start"
                 color="primary"
                 variant="soft"

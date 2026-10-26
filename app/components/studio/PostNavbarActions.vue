@@ -5,14 +5,13 @@ const props = defineProps<{
   post: PostSelectType;
   statusText: string;
   savePost: (metadata: PostSelectType["metadata"]) => Promise<void>;
-  isCarousel?: boolean;
 }>();
 
 const emit = defineEmits<{
   copyLink: [];
   copyContent: [];
+  openGraph: [];
   deletePost: [];
-  toggleCarouselMode: [];
 }>();
 
 const toast = useToast();
@@ -136,15 +135,6 @@ const dropdownItems = computed(() => [
   ],
   [
     {
-      label: `Switch to ${props.isCarousel ? "Article" : "Carousel"}`,
-      icon: props.isCarousel
-        ? "i-lucide-file-text"
-        : "i-lucide-panels-top-left",
-      onSelect: () => emit("toggleCarouselMode"),
-    },
-  ],
-  [
-    {
       label: "Copy Link",
       icon: "i-lucide-link",
       onSelect: () => emit("copyLink"),
@@ -153,6 +143,11 @@ const dropdownItems = computed(() => [
       label: "Copy Post Content",
       icon: "i-lucide-copy",
       onSelect: () => emit("copyContent"),
+    },
+    {
+      label: "Post graph",
+      icon: "i-lucide-network",
+      onSelect: () => emit("openGraph"),
     },
   ],
   [
