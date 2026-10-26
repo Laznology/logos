@@ -215,6 +215,8 @@ function inlineNodes(content: JSONContent[] = []): RenderNode[] {
         }
         if (mark.type === "highlight") {
           style.backgroundColor = String(mark.attrs?.color || "#fef08a");
+          // ponytail: author picks the highlight bg; dark text keeps it readable on the dark frame
+          style.color = "#0a0a0a";
         }
         if (mark.type === "link") {
           style.color = CAROUSEL_ACCENT;
@@ -362,7 +364,9 @@ function codeBlockNode(node: JSONContent): RenderNode {
       borderStyle: "solid",
       borderWidth: 1,
       marginBottom: 20,
+      overflow: "hidden",
       padding: "16px 18px",
+      width: "100%",
     },
     children: [
       {

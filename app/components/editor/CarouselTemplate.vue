@@ -43,10 +43,15 @@ const bodyHtml = computed(() => {
     return "";
   }
 
-  return generateHTML(
-    { type: "doc", content: props.frame.content } satisfies JSONContent,
-    extensions
-  );
+  try {
+    return generateHTML(
+      { type: "doc", content: props.frame.content } satisfies JSONContent,
+      extensions
+    );
+  } catch {
+    // ponytail: satu node tak dikenal jangan mengosongkan seluruh slide
+    return "";
+  }
 });
 </script>
 
