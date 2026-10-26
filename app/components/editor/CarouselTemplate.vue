@@ -174,13 +174,13 @@ const bodyHtml = computed(() => {
 }
 
 .carousel-body {
-  /* ponytail: center accent + content as one group so the rule hugs the text
-     instead of floating alone at the top of the slide */
-  justify-content: center;
+  /* ponytail: accent stays pinned at the top-left; content centers in the space
+     below it. Two auto margins would fight and push everything into the bottom third. */
+  justify-content: flex-start;
 }
 
 .carousel-body > .carousel-accent {
-  margin-bottom: 2.4cqw;
+  margin-bottom: 0;
 }
 
 .carousel-content {
@@ -188,6 +188,7 @@ const bodyHtml = computed(() => {
   font-family: "Lora", Georgia, serif;
   font-size: clamp(1rem, 2.7cqw, 2.25rem);
   line-height: 1.8;
+  margin: auto 0;
   overflow-wrap: anywhere;
 }
 

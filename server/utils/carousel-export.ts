@@ -547,7 +547,7 @@ function frameNode(
     backgroundRepeat: "repeat",
     backgroundSize: "400px 400px",
     color: CAROUSEL_TEXT,
-    padding: "94px 119px",
+    padding: "70px 119px",
     boxSizing: "border-box",
   };
 
