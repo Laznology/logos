@@ -6,6 +6,7 @@ definePageMeta({
   middleware: "guest",
 });
 
+const route = useRoute();
 const { signIn } = authClient;
 const session = authClient.useSession();
 const activeOrganization = authClient.useActiveOrganization();
@@ -58,6 +59,12 @@ async function onSubmit(event: FormSubmitEvent<SignInType>) {
     description: "You have signed in successfully.",
     color: "success",
   });
+  const redirect =
+    typeof route.query.redirect === "string" ? route.query.redirect : "";
+  if (redirect.startsWith("/") && !redirect.startsWith("//")) {
+    await navigateTo(redirect);
+    return;
+  }
   const workspaceSlug = activeOrganization.value.data?.slug;
   await navigateTo(workspaceSlug ? `/${workspaceSlug}` : "/");
 }
