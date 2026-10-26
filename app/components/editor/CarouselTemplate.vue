@@ -127,6 +127,7 @@ const bodyHtml = computed(() => {
 
 .carousel-cover {
   justify-content: flex-start;
+  padding-top: 9cqw;
 }
 
 .carousel-eyebrow,
@@ -162,13 +163,21 @@ const bodyHtml = computed(() => {
   text-transform: uppercase;
 }
 
+.carousel-cover-footer {
+  bottom: 7cqw;
+  left: 11cqw;
+  position: absolute;
+  right: 11cqw;
+  width: auto;
+}
+
 .carousel-cover-title {
   font-family: "Lora", Georgia, serif;
   font-size: clamp(2.5rem, 6.2cqw, 4.5rem);
   font-weight: 300;
   letter-spacing: -0.01em;
   line-height: 1.2;
-  margin: 42cqw 0 auto;
+  margin: auto 0;
   max-width: 88%;
   overflow-wrap: anywhere;
 }
