@@ -3,6 +3,10 @@ import type { JSONContent } from "@tiptap/core";
 import { Color } from "@tiptap/extension-color";
 import { Highlight } from "@tiptap/extension-highlight";
 import Image from "@tiptap/extension-image";
+import { Table } from "@tiptap/extension-table";
+import { TableCell } from "@tiptap/extension-table-cell";
+import { TableHeader } from "@tiptap/extension-table-header";
+import { TableRow } from "@tiptap/extension-table-row";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { generateHTML } from "@tiptap/html";
 import StarterKit from "@tiptap/starter-kit";
@@ -33,6 +37,10 @@ const extensions = [
   StarterKit,
   Image,
   ImageUpload,
+  Table,
+  TableRow,
+  TableHeader,
+  TableCell,
   TextStyle,
   Color,
   Highlight.configure({ multicolor: true }),
@@ -166,11 +174,13 @@ const bodyHtml = computed(() => {
 }
 
 .carousel-body {
-  justify-content: flex-start;
+  /* ponytail: center accent + content as one group so the rule hugs the text
+     instead of floating alone at the top of the slide */
+  justify-content: center;
 }
 
 .carousel-body > .carousel-accent {
-  margin-bottom: auto;
+  margin-bottom: 2.4cqw;
 }
 
 .carousel-content {
@@ -178,7 +188,6 @@ const bodyHtml = computed(() => {
   font-family: "Lora", Georgia, serif;
   font-size: clamp(1rem, 2.7cqw, 2.25rem);
   line-height: 1.8;
-  margin: auto 0;
   overflow-wrap: anywhere;
 }
 
@@ -231,6 +240,67 @@ const bodyHtml = computed(() => {
   max-height: 48cqw;
   max-width: 100%;
   object-fit: contain;
+}
+
+.carousel-content :deep(a) {
+  color: var(--carousel-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.carousel-content :deep(mark) {
+  /* ponytail: editor emits inline `color: inherit`; author picks the bg, so pin text dark */
+  color: #0a0a0a !important;
+  padding: 0 0.15em;
+}
+
+.carousel-content :deep(pre) {
+  background: rgb(0 0 0 / 40%);
+  border: 1px solid var(--carousel-border);
+  border-radius: 0.5em;
+  font-size: clamp(0.65rem, 2.2cqw, 1.7rem);
+  line-height: 1.45;
+  margin: 0 0 0.75em;
+  overflow-wrap: anywhere;
+  padding: 0.75em 1em;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.carousel-content :deep(code) {
+  background: rgb(0 0 0 / 40%);
+  border-radius: 0.25em;
+  font-size: 0.88em;
+  padding: 0.1em 0.35em;
+}
+
+.carousel-content :deep(pre code) {
+  background: none;
+  border-radius: 0;
+  font-size: inherit;
+  padding: 0;
+}
+
+.carousel-content :deep(table) {
+  border-collapse: collapse;
+  font-size: 0.82em;
+  margin: 0 0 0.75em;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.carousel-content :deep(th),
+.carousel-content :deep(td) {
+  border: 1px solid var(--carousel-border);
+  overflow-wrap: anywhere;
+  padding: 0.4em 0.55em;
+  text-align: left;
+  vertical-align: top;
+}
+
+.carousel-content :deep(th) {
+  background: rgb(0 0 0 / 40%);
+  font-weight: 700;
 }
 
 .carousel-slide-footer {
